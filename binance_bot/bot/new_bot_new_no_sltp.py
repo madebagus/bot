@@ -12,7 +12,6 @@ from apscheduler.triggers.interval import IntervalTrigger
 from dconfig import read_db_config
 from conn_ssh import create_conn
 from decimal import Decimal, ROUND_DOWN
-from binance_bot.routers.wallet import get_wallet_balance, calculate_dynamic_safe_trade_amount
 from decimal import Decimal
 import pandas_ta as pd_ta
 
