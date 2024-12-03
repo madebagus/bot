@@ -375,7 +375,7 @@ def track_trade(
         print(f"[Tracking PnL] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         
-        # 1. Exit on Reversal (Only if in Profit)
+        # 1. opportunis taking profit
         if price_reversal and profit_relative >= micro_profit:
             close_position(symbol, side)
             print(f"[* * * * CLOSED] {symbol} Closed due to price reversal with profit of {profit_relative:.2f}%.")
