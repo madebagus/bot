@@ -33,6 +33,7 @@ def start_profit_monitor():
 
 # Run the app and the background tasks
 if __name__ == '__main__':
+    
     # Start the background threads
     monitor_thread = Thread(target=start_profit_monitor)
     monitor_thread.daemon = True  # Daemon thread will exit when the main program exits
@@ -43,4 +44,4 @@ if __name__ == '__main__':
 #    fetch_order_thread.start()
 
     # Run the Flask app (it will not block background threads)
-    app.run(debug=True, use_reloader=False)  # `use_reloader=False` to prevent running the background tasks multiple times
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)  # `use_reloader=False` to prevent running the background tasks multiple times
