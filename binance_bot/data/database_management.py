@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify
 from dconfig import read_db_config
 from conn_ssh import create_conn
 from decimal import Decimal, ROUND_DOWN
-from routers.wallet import get_wallet_balance, calculate_dynamic_safe_trade_amount
+from binance_bot.routers.wallet import get_wallet_balance, calculate_dynamic_safe_trade_amount
 from datetime import datetime, timedelta
 
 
