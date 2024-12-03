@@ -1,8 +1,8 @@
 from math import e
 import time
 import os
-from bot.new_bot_new_no_sltp import adx_indicator
-from bot.new_bot_xman import suggest_trade
+from binance_bot.bot.new_bot_new_no_sltp import adx_indicator
+from binance_bot.bot.new_bot_xman import suggest_trade
 from matplotlib.units import DecimalConverter
 import pandas as pd
 from binance.client import Client
