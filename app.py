@@ -1,9 +1,9 @@
 from threading import Thread
 import time
 from flask import Flask
-from bot.new_bot_new_no_sltp import run_bot_real_bp
-from reversal.reversal_monitor_new_no_sltp import monitor_positions
-from data.database_management import fetch_and_upsert_order_history
+from binance_bot.bot.new_bot_new_no_sltp import run_bot_real_bp
+from binance_bot.reversal.reversal_monitor_new_no_sltp import monitor_positions
+from binance_bot.data.database_management import fetch_and_upsert_order_history
 
 # Initialize the Flask application
 app = Flask(__name__)
