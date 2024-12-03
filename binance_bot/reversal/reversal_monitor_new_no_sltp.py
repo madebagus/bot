@@ -324,7 +324,7 @@ def track_trade(
         
         # define minimum target profit for exit
         min_profit = 0.1 * max_profit
-        micro_profit = 0.03 * max_profit
+        micro_profit = 0.02 * max_profit
         # check price reversal for exit
         price_reversal = get_price_reversal(symbol,side)
         #price_reversal = get_price_reversal_new(symbol,side)
