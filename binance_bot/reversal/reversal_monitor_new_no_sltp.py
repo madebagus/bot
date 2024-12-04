@@ -365,7 +365,7 @@ def track_trade(
         #print(f"[Martingle] Martingle = {martingle}, Reversal_averaging:{reversal_for_averaging}, Amount:{amount}, original_amount: {amount_2}")
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL - v1.5] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v1.5x] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         
         # 1. opportunis taking profit
