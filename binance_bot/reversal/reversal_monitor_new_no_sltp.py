@@ -388,11 +388,17 @@ def track_trade(
             print(f"[* * * * CLOSED] {symbol} Closed due to both Bollinger and RSI reversal with profit of {profit_relative:.2f}%.")
             return {"close_position": True, "reason": "Bollinger reversal and RSI reversal"}   
             
-        # 3. profit and rsi reversal
+        # 3a. profit and rsi reversal
         if profit_relative >= rush_profit and rsi_reversal_profit:
             close_position(symbol, side)
             print(f"[* * * * CLOSED] {symbol} Closed due to RSI reversal with profit of {profit_relative:.2f}%.")
-            return {"close_position": True, "reason": "RSI reversal profit"}  
+            return {"close_position": True, "reason": "RSI reversal profit"} 
+
+        # 3b. met bollinger reversal
+        if profit_relative >= rush_profit and boll_reversal_profit:
+            close_position(symbol, side)
+            print(f"[* * * * CLOSED] {symbol} Closed due to Bollinger reversal with profit of {profit_relative:.2f}%.")
+            return {"close_position": True, "reason": "Bollinger reversal"}  
 
         # 4. Check if profit but not met the max profit and reversal detected
         if min_profit <= profit_relative <= max_profit:
