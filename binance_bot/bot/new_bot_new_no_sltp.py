@@ -152,9 +152,9 @@ def check_entry_signal(df, symbol):
 
         # Final signal logic
         if price_change >= atr_threshold:
-            if rsi_dec == 'BUY' and macd_dec == 'BUY' and bb_dec=='BUY' and volume_spike:
+            if rsi_dec == 'BUY' and macd_dec == 'BUY' and bb_dec=='BUY':
                 return 'BUY'
-            elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL' and volume_spike:
+            elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL':
                 return 'SELL'
             
             print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll: {bb_dec}, spike: {volume_spike}")
@@ -319,11 +319,11 @@ def adx_indicator(df):
     if 'high' not in df or 'low' not in df or 'close' not in df:
         raise ValueError("Dataframe must contain 'high', 'low', and 'close' columns.")
     
-    # Calculate ADX using pandas_ta with a default length of 14
-    adx_df = pd_ta.adx(df['high'], df['low'], df['close'], length=14)  # ADX returns a DataFrame
+    # Calculate ADX using pandas_ta with a default length of 9
+    adx_df = pd_ta.adx(df['high'], df['low'], df['close'], length=9)  # ADX returns a DataFrame
     
     # Select only the ADX column from the resulting DataFrame
-    df['ADX'] = adx_df['ADX_14']
+    df['ADX'] = adx_df['ADX_9']
 
     # Drop any NaN values that may be present
     df = df.dropna(subset=['ADX'])
