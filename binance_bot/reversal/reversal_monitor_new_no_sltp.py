@@ -276,8 +276,8 @@ def track_trade(
     max_profit=1,  # Minimum target profit in percentage
     bollinger_window=9,  # Bollinger Bands window
     bollinger_std_dev=2,  # Bollinger Bands standard deviation
-    rsi_oversold_zone=35,  # RSI oversold zone
-    rsi_overbought_zone=65,  # RSI overbought zone
+    rsi_oversold_zone=40,  # RSI oversold zone
+    rsi_overbought_zone=60,  # RSI overbought zone
     rsi_length=9,  # RSI calculation period
     sleep_time=1  # Time to sleep between checks (in seconds)
 ):
@@ -324,7 +324,7 @@ def track_trade(
         
         # define minimum target profit for exit
         min_profit = 0.1 * max_profit
-        micro_profit = 0.02 * max_profit
+        micro_profit = 0.45 * max_profit
         # check price reversal for exit
         price_reversal = get_price_reversal(symbol,side)
         #price_reversal = get_price_reversal_new(symbol,side)
