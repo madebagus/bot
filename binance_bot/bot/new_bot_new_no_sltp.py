@@ -122,17 +122,17 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi < 15 or (rsi > 15 and prev_rsi < 15)):
+        if (rsi < 5) or (rsi > 5 and prev_rsi < 5):
             rsi_dec = 'BUY' 
-        elif (rsi > 85 or (rsi < 85 and prev_rsi > 85)):
+        elif (rsi > 95) or (rsi < 95 and prev_rsi > 95):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
 
         #Indicator macd
-        if (macd > macd_signal and macd > 0):
+        if (macd > macd_signal and macd <= 0):
             macd_dec = 'BUY'
-        elif (macd < macd_signal and macd < 0):
+        elif (macd < macd_signal and macd >= 0):
             macd_dec = 'SELL'
         else:
             macd_dec = 'HOLD'
@@ -145,16 +145,16 @@ def check_entry_signal(df, symbol):
         else:
             bb_dec = 'HOLD'
         
-        #volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
+        volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.25
+        atr_threshold = atr * 0.3
         price_change = abs(price - prev_price)
 
         # Final signal logic
         if price_change >= atr_threshold:
-            if rsi_dec == 'BUY' and macd_dec == 'BUY' and bb_dec=='BUY':
+            if rsi_dec == 'BUY' and macd_dec == 'BUY' and bb_dec=='BUY' and volume_spike:
                 return 'BUY'
-            elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL':
+            elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL' and volume_spike:
                 return 'SELL'
             
             #print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll:{bb_dec}")
@@ -191,17 +191,17 @@ def check_normal_trend_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators RSI 
-        if (rsi <= 30 or (rsi > 30 and prev_rsi < 30)):
+        if (rsi <= 25) or (rsi > 25 and prev_rsi < 25):
             rsi_dec = 'BUY'
-        elif(rsi >= 70 or (rsi < 70 and prev_rsi > 70)):
+        elif(rsi >= 75) or (rsi < 75 and prev_rsi > 75):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD'
         
         # Indicator MACD
-        if (macd > macd_signal and macd > 0):
+        if (macd > macd_signal and macd <= 0):
             macd_dec = 'BUY'
-        elif (macd < macd_signal and macd < 0):
+        elif (macd < macd_signal and macd >= 0):
             macd_dec = 'SELL'
         else:
             macd_dec = 'HOLD'
@@ -218,7 +218,7 @@ def check_normal_trend_signal(df, symbol):
         
         #volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.15
+        atr_threshold = atr * 0.2
         price_change = abs(price - prev_price)
         
         # Final signal logic
