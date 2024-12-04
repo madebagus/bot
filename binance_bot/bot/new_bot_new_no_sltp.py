@@ -157,7 +157,7 @@ def check_entry_signal(df, symbol):
             elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL':
                 return 'SELL'
             
-            print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll: {bb_dec}, spike: {volume_spike}")
+            #print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll: {bb_dec}, spike: {volume_spike}")
 
         return 'HOLD'
 
@@ -228,7 +228,7 @@ def check_normal_trend_signal(df, symbol):
             elif rsi_dec == 'SELL' and bb_dec == 'SELL':
                 return 'SELL'
             
-            print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, boll:{bb_dec}, position_percentage: {position_percentage:.2f}")
+            #print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, boll:{bb_dec}, position_percentage: {position_percentage:.2f}")
 
         return 'HOLD'
 
@@ -241,7 +241,7 @@ def check_normal_trend_signal(df, symbol):
 def combine_bollinger_and_rsi(
     symbol, 
     price_column='close',  
-    adx_threshold=22,
+    adx_threshold=25,
 ):
     """
     Combine Bollinger Bands and RSI to determine a trade trend (BUY, SELL, or HOLD).
