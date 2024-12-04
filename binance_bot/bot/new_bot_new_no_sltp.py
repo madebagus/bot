@@ -157,7 +157,7 @@ def check_entry_signal(df, symbol):
             elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL' and volume_spike:
                 return 'SELL'
             
-            print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll:{bb_dec}")
+            print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll: {bb_dec}, spike: {volume_spike}")
 
         return 'HOLD'
 
