@@ -122,9 +122,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi <= 15) or (rsi > 5 and prev_rsi < 15):
+        if (rsi <= 20) or (rsi > 20 and prev_rsi < 20):
             rsi_dec = 'BUY' 
-        elif (rsi >= 85) or (rsi < 85 and prev_rsi > 85):
+        elif (rsi >= 80) or (rsi < 80 and prev_rsi > 80):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -157,7 +157,7 @@ def check_entry_signal(df, symbol):
             elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL' and volume_spike:
                 return 'SELL'
             
-            #print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll:{bb_dec}")
+            print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll:{bb_dec}")
 
         return 'HOLD'
 
@@ -228,7 +228,7 @@ def check_normal_trend_signal(df, symbol):
             elif rsi_dec == 'SELL' and bb_dec == 'SELL':
                 return 'SELL'
             
-            #print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, boll:{bb_dec}, position_percentage: {position_percentage:.2f}")
+            print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, boll:{bb_dec}, position_percentage: {position_percentage:.2f}")
 
         return 'HOLD'
 
