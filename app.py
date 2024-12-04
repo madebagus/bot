@@ -29,7 +29,7 @@ def start_bot():
             start_trading_bot()
         except Exception as e:
             print(f"Starting BOT error: {e}")
-        time.sleep(3)  # Adjust frequency of checks as needed
+        time.sleep(5)  # Adjust frequency of checks as needed
 
 # Run the app and the background tasks
 if __name__ == '__main__':
