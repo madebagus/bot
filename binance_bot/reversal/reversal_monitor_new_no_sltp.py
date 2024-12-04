@@ -323,7 +323,8 @@ def track_trade(
         closing_price = latest_close
         
         # define minimum target profit for exit
-        min_profit = 0.08 * max_profit
+        min_profit = 0.1 * max_profit
+        rush_profit = 0.05 * max_profit
         micro_profit = 0.35 * max_profit
         # check price reversal for exit
         price_reversal = get_price_reversal(symbol,side)
@@ -382,13 +383,13 @@ def track_trade(
             return {"close_position": True, "reason": "Micro Profit Met"}   
 
         # 2. met bollinger and rsi reversal
-        if profit_relative > 0 and rsi_reversal_profit and boll_reversal_profit:
+        if profit_relative >= rush_profit and rsi_reversal_profit and boll_reversal_profit:
             close_position(symbol, side)
             print(f"[* * * * CLOSED] {symbol} Closed due to both Bollinger and RSI reversal with profit of {profit_relative:.2f}%.")
             return {"close_position": True, "reason": "Bollinger reversal and RSI reversal"}   
             
         # 3. profit and rsi reversal
-        if profit_relative > 0 and rsi_reversal_profit:
+        if profit_relative >= rush_profit and rsi_reversal_profit:
             close_position(symbol, side)
             print(f"[* * * * CLOSED] {symbol} Closed due to RSI reversal with profit of {profit_relative:.2f}%.")
             return {"close_position": True, "reason": "RSI reversal profit"}  
