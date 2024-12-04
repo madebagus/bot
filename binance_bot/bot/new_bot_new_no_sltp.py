@@ -122,9 +122,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi < 5) or (rsi > 5 and prev_rsi < 5):
+        if (rsi <= 5) or (rsi > 5 and prev_rsi < 5):
             rsi_dec = 'BUY' 
-        elif (rsi > 95) or (rsi < 95 and prev_rsi > 95):
+        elif (rsi >= 95) or (rsi < 95 and prev_rsi > 95):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -191,9 +191,9 @@ def check_normal_trend_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators RSI 
-        if (rsi <= 25) or (rsi > 25 and prev_rsi < 25):
+        if (rsi <= 27) or (rsi > 27 and prev_rsi < 27):
             rsi_dec = 'BUY'
-        elif(rsi >= 75) or (rsi < 75 and prev_rsi > 75):
+        elif(rsi >= 73) or (rsi < 73 and prev_rsi > 73):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD'
@@ -241,7 +241,7 @@ def check_normal_trend_signal(df, symbol):
 def combine_bollinger_and_rsi(
     symbol, 
     price_column='close',  
-    adx_threshold=25,
+    adx_threshold=22,
 ):
     """
     Combine Bollinger Bands and RSI to determine a trade trend (BUY, SELL, or HOLD).
