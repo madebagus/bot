@@ -342,14 +342,10 @@ def track_trade(
             rsi_reversal_profit = (
                 (latest_rsi >= rsi_overbought_zone) or # overbought
                 (latest_rsi < rsi_overbought_zone and previous_rsi >= rsi_overbought_zone) or # overbought reversal
-                (latest_rsi < 50 and previous_rsi >= 50) or # fail breakout
-                (latest_rsi < 50 and previous_rsi <=50 and latest_rsi < previous_rsi) # fail breakdown with low price action
             )
             # Bollinger Reversal
             boll_reversal_profit = (
                 (latest_close >= latest_upper_band) or # overbought
-                (latest_close < latest_mid_band and previous_close > latest_mid_band) or #fail breakout
-                (latest_close < previous_close and latest_close < latest_mid_band)  #low price action
             )
         elif side == 'SELL':
             # For SELL position, profit is when current price < entry price
@@ -361,14 +357,10 @@ def track_trade(
             rsi_reversal_profit = (
                 (latest_rsi <= rsi_oversold_zone) or # oversold met
                 (latest_rsi > rsi_oversold_zone and previous_rsi < rsi_oversold_zone) or # oversold reversal met
-                (latest_rsi > 50 and previous_rsi < 50) or # fail breakdown
-                (latest_rsi > 50 and previous_rsi <= 50 and latest_rsi > previous_rsi) # fail breakdown with low price action
             )
             #Bollinger reversal
             boll_reversal_profit =  (
                 (latest_close <= latest_lower_band) or # touching lower band 
-                (latest_close > latest_mid_band and previous_close < latest_mid_band) or # fail breakdown
-                (latest_close > previous_close and latest_close > latest_mid_band) # fail breakdown low price action
             )
         #print(f"[Martingle] Martingle = {martingle}, Reversal_averaging:{reversal_for_averaging}, Amount:{amount}, original_amount: {amount_2}")
         # Log PnL
