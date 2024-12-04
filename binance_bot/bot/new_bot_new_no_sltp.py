@@ -122,9 +122,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi <= 5) or (rsi > 5 and prev_rsi < 5):
+        if (rsi <= 15) or (rsi > 5 and prev_rsi < 15):
             rsi_dec = 'BUY' 
-        elif (rsi >= 95) or (rsi < 95 and prev_rsi > 95):
+        elif (rsi >= 85) or (rsi < 85 and prev_rsi > 85):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -147,7 +147,7 @@ def check_entry_signal(df, symbol):
         
         volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.3
+        atr_threshold = atr * 0.25
         price_change = abs(price - prev_price)
 
         # Final signal logic
@@ -191,9 +191,9 @@ def check_normal_trend_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators RSI 
-        if (rsi <= 27) or (rsi > 27 and prev_rsi < 27):
+        if (rsi <= 30) or (rsi > 30 and prev_rsi < 30):
             rsi_dec = 'BUY'
-        elif(rsi >= 73) or (rsi < 73 and prev_rsi > 73):
+        elif(rsi >= 70) or (rsi < 70 and prev_rsi > 70):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD'
@@ -209,16 +209,16 @@ def check_normal_trend_signal(df, symbol):
         position_percentage = (price - lower_band) / (upper_band - lower_band)
         
         # Indicator Bollinger
-        if ((price <= lower_band or position_percentage <= 0.1) and price < bb_mean):
+        if ((price <= lower_band or position_percentage <= 0.05) and price < bb_mean):
             bb_dec = 'BUY'
-        elif ((price >= upper_band or position_percentage >= 0.9) and price > bb_mean):
+        elif ((price >= upper_band or position_percentage >= 0.95) and price > bb_mean):
             bb_dec = 'SELL'
         else:
             bb_dec = 'HOLD' 
         
         #volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.2
+        atr_threshold = atr * 0.15
         price_change = abs(price - prev_price)
         
         # Final signal logic
