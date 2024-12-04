@@ -372,20 +372,30 @@ def track_trade(
         #print(f"[Martingle] Martingle = {martingle}, Reversal_averaging:{reversal_for_averaging}, Amount:{amount}, original_amount: {amount_2}")
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v1.5] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         
         # 1. opportunis taking profit
-        if price_reversal and profit_relative >= micro_profit:
+        if profit_relative >= micro_profit:
             close_position(symbol, side)
-            print(f"[* * * * CLOSED] {symbol} Closed due to price reversal with profit of {profit_relative:.2f}%.")
-            return {"close_position": True, "reason": "Price reversal with profit"}   
-        
-        # 2. Check if profit but not met the max profit and reversal detected
-        
+            print(f"[* * * * CLOSED] {symbol} Closed due to profit > min profit and Micro Profit Met with profit of {profit_relative:.2f}%.")
+            return {"close_position": True, "reason": "Micro Profit Met"}   
+
+        # 2. met bollinger and rsi reversal
+        if profit_relative > 0 and rsi_reversal_profit and boll_reversal_profit:
+            close_position(symbol, side)
+            print(f"[* * * * CLOSED] {symbol} Closed due to both Bollinger and RSI reversal with profit of {profit_relative:.2f}%.")
+            return {"close_position": True, "reason": "Bollinger reversal and RSI reversal"}   
+            
+        # 3. profit and rsi reversal
+        if profit_relative > 0 and rsi_reversal_profit:
+            close_position(symbol, side)
+            print(f"[* * * * CLOSED] {symbol} Closed due to RSI reversal with profit of {profit_relative:.2f}%.")
+            return {"close_position": True, "reason": "RSI reversal profit"}  
+
+        # 4. Check if profit but not met the max profit and reversal detected
         if min_profit <= profit_relative <= max_profit:
             print(f"Checking exit conditions for {symbol}: Profit={profit_relative:.2f}%")
-            
             # List of exit conditions
             exit_conditions = [
                 (boll_reversal_profit, "Price crossed Bollinger Bands after profit"),
@@ -402,8 +412,7 @@ def track_trade(
             print(f"No exit condition met for {symbol}.")
             return {"close_position": False, "reason": "No exit condition met"}    
         
-        # 3. Check if profit met the max profit and no reversal detected
-
+        # 5. Check if profit met the max profit and no reversal detected
         if profit_relative >= max_profit: 
             print(f"Checking exit conditions for {symbol}: Profit={profit_relative:.2f}%")
             
