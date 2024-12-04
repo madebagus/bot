@@ -1,7 +1,7 @@
 from threading import Thread
 import time
 from flask import Flask
-from binance_bot.bot.new_bot_new_no_sltp import start_trading_bot
+from binance_bot.bot.new_bot_new_no_sltp import run_trading_bot_task
 from binance_bot.reversal.reversal_monitor_new_no_sltp import monitor_positions
 from binance_bot.data.database_management import fetch_and_upsert_order_history
 
@@ -23,10 +23,10 @@ def start_profit_monitor():
 
 # Function to run the BOT in a separate thread
 def start_bot(): 
-    print(">> Starting BOT...")
+    print(">> Starting Bot Engine...")
     while True:
         try:
-            start_trading_bot()
+            run_trading_bot_task()
         except Exception as e:
             print(f"Starting BOT error: {e}")
         time.sleep(5)  # Adjust frequency of checks as needed
