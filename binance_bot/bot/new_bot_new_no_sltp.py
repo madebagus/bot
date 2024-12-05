@@ -14,6 +14,7 @@ from conn_ssh import create_conn
 from decimal import Decimal, ROUND_DOWN
 from decimal import Decimal
 import pandas_ta as pd_ta
+from binance_bot.messaging.chat_bot import send_telegram_message
 
 
 # Initialize the blueprint for the bot
@@ -387,7 +388,7 @@ def check_existing_orders(symbol, trend):
 
 # placing future order at the mark price 
 
-def place_futures_order(symbol, trend, leverage, quantity):
+def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_trade):
     """
     Place a market order to open a position without setting stop loss or take profit.
     """
@@ -426,6 +427,8 @@ def place_futures_order(symbol, trend, leverage, quantity):
             positionSide=position_side  # Specify the position side (LONG or SHORT)
         )
         print(f"Placed market order: {order}")
+        message = f"+ + + Placed Order {symbol}\nSide: {trend}\nQuantity: {quantity} {symbol}\n Size:{usdt_to_trade}\n Leverage: {leverage}\n Entry Price:{entry_price}"
+        send_telegram_message(message)
 
     except Exception as e:
         print(f"Error placing order for {symbol} : {e}")
@@ -476,7 +479,9 @@ def run_symbol_task(symbol):
             symbol, 
             trade_signal,
             leverage, 
-            quantity
+            quantity,
+            entry_price, 
+            usdt_to_trade
         )
         
     #else:

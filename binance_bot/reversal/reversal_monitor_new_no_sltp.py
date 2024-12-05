@@ -10,6 +10,7 @@ from dconfig import read_db_config
 import pandas_ta as pd_ta 
 from conn_ssh import create_conn
 import time
+from binance_bot.messaging.chat_bot import send_telegram_message
 #from data.database_management import update_order_in_db
 
 
@@ -135,7 +136,7 @@ def get_data_rev(symbol, interval='1m', retries=5, delay=2):
 
 
 # Function to close a position
-def close_position(symbol, side):
+def close_position(symbol, side, profit_relative):
     try:
         positions = client.futures_account(recvWindow=10000)['positions']
         for pos in positions:
@@ -150,6 +151,8 @@ def close_position(symbol, side):
                         quantity=quantity
                 )
                 print(f"[CLOSE ORDER] Position closed for {symbol} ({side}).")
+                message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity} {symbol}\n Profit: {profit_relative:.2f}%"
+                send_telegram_message(message)
                 return
     except Exception as e:
         print(f"Error closing position for {symbol}: {e}")
@@ -370,25 +373,25 @@ def track_trade(
         
         # 1. opportunis taking profit
         if profit_relative >= micro_profit:
-            close_position(symbol, side)
+            close_position(symbol, side, profit_relative)
             print(f"[* * * * CLOSED] {symbol} Closed due to profit > min profit and Micro Profit Met with profit of {profit_relative:.2f}%.")
             return {"close_position": True, "reason": "Micro Profit Met"}   
 
         # 2. met bollinger and rsi reversal
         if profit_relative >= rush_profit and rsi_reversal_profit and boll_reversal_profit:
-            close_position(symbol, side)
+            close_position(symbol, side, profit_relative)
             print(f"[* * * * CLOSED] {symbol} Closed due to both Bollinger and RSI reversal with profit of {profit_relative:.2f}%.")
             return {"close_position": True, "reason": "Bollinger reversal and RSI reversal"}   
             
         # 3a. profit and rsi reversal
         if profit_relative >= rush_profit and rsi_reversal_profit:
-            close_position(symbol, side)
+            close_position(symbol, side, profit_relative)
             print(f"[* * * * CLOSED] {symbol} Closed due to RSI reversal with profit of {profit_relative:.2f}%.")
             return {"close_position": True, "reason": "RSI reversal profit"} 
 
         # 3b. met bollinger reversal
         if profit_relative >= rush_profit and boll_reversal_profit:
-            close_position(symbol, side)
+            close_position(symbol, side, profit_relative)
             print(f"[* * * * CLOSED] {symbol} Closed due to Bollinger reversal with profit of {profit_relative:.2f}%.")
             return {"close_position": True, "reason": "Bollinger reversal"}  
 
@@ -404,7 +407,7 @@ def track_trade(
 
             for condition, reason in exit_conditions:
                 if condition:
-                    close_position(symbol, side)
+                    close_position(symbol, side, profit_relative)
                     print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
                     return {"close_position": True, "reason": reason}
 
@@ -424,7 +427,7 @@ def track_trade(
 
             for condition, reason in exit_conditions:
                 if condition:
-                    close_position(symbol, side)
+                    close_position(symbol, side, profit_relative)
                     print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
                     return {"close_position": True, "reason": reason}
         
