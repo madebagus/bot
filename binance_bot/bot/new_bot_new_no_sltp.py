@@ -123,9 +123,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi >= 20 and prev_rsi <= 20): # Only entry after oversold reversal
+        if(rsi < 20) or (rsi >= 20 and prev_rsi <= 20): # Only entry after oversold reversal
             rsi_dec = 'BUY' 
-        elif (rsi <= 80 and prev_rsi >= 80): # Only entry after overbough reversal 
+        elif (rsi > 80) or (rsi <= 80 and prev_rsi >= 80): # Only entry after overbough reversal 
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -242,7 +242,7 @@ def check_normal_trend_signal(df, symbol):
 def combine_bollinger_and_rsi(
     symbol, 
     price_column='close',  
-    adx_threshold=22.5,
+    adx_threshold=25,
 ):
     """
     Combine Bollinger Bands and RSI to determine a trade trend (BUY, SELL, or HOLD).
@@ -427,7 +427,7 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
             positionSide=position_side  # Specify the position side (LONG or SHORT)
         )
         print(f"Placed market order: {order}")
-        message = f"+ + + Placed Order\n{symbol}: {trend}\nTrend: {trend_condition}\nQuantity: {quantity}\n Size:{usdt_to_trade}\n Leverage: {leverage}\n Entry Price:{entry_price}"
+        message = f"+ + + Placed Order {symbol}\nSide: {trend}\nTrend: {trend_condition}\nQuantity: {quantity}\nSize:{usdt_to_trade}\nLeverage: {leverage}\nEntry Price:{entry_price}"
         send_telegram_message(message)
 
     except Exception as e:
@@ -455,7 +455,7 @@ def run_symbol_task(symbol):
     entry_price = Decimal(str(trade_signal_sugest['entry_price']))
     adx = trade_signal_sugest['adx']
 
-    if adx > 20: 
+    if adx > 25: 
         trend_condition = 'Strong Trend'
     else:
         trend_condition = 'Normal Trend'

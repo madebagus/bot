@@ -88,7 +88,7 @@ def get_data(symbol, interval, retries=5, delay=2):
 
 
 # Function to close a position
-def close_position(symbol, side, profit_relative, reason):
+def close_position(symbol, side, profit_relative, reason, usdt_profit):
     try:
         positions = client.futures_account(recvWindow=10000)['positions']
         for pos in positions:
@@ -103,7 +103,7 @@ def close_position(symbol, side, profit_relative, reason):
                         quantity=quantity
                 )
                 print(f"[CLOSE ORDER] Position closed for {symbol} ({side}).")
-                message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity} {symbol}\nProfit: {profit_relative:.2f}%\nReason: {reason} "
+                message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity}\nProfit: {profit_relative:.2f}%\nProfit USDT: {usdt_profit:.2f}\nReason: {reason} "
                 send_telegram_message(message)
                 return
     except Exception as e:
@@ -129,7 +129,9 @@ def averaging_order(symbol, side, amount):
         print(f"Error placing averaging order for {symbol}: {e}")
 
 
-# Exit condition functions
+# RSI Exit condition functions
+
+# RSI Overbougt/Oversold
 def condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
     if position_side == 'BUY' and rsi_current >= rsi_overbought:
         return True
@@ -137,19 +139,21 @@ def condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold,
         return True
     return False
 
+#RSI fail breakout or breakdown
 def condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
-    if position_side == 'BUY' and rsi_previous < rsi_overbought and rsi_current >= rsi_overbought:
+    if position_side == 'BUY' and rsi_current > rsi_oversold and rsi_current <= 50 and rsi_previous > 50:
         return True
-    elif position_side == 'SELL' and rsi_previous > rsi_oversold and rsi_current <= rsi_oversold:
+    elif position_side == 'SELL' and rsi_current < rsi_overbought and rsi_current >= 50 and rsi_previous < 50:
         return True
     return False
 
+#RSI weak signal
 def condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
     if position_side == 'BUY':
-        if rsi_current >= rsi_oversold and rsi_current < 50 and rsi_previous > 50:
+        if rsi_current > rsi_oversold and rsi_current < 50 and rsi_previous <= 50:
             return True
     elif position_side == 'SELL':
-        if rsi_current <= rsi_overbought and rsi_current > 50 and rsi_previous < 50:
+        if rsi_current < rsi_overbought and rsi_current > 50 and rsi_previous >= 50:
             return True
     return False
 
@@ -191,8 +195,8 @@ def track_trade(
     max_profit=1,  # Minimum target profit in percentage
     bollinger_window=9,  # Bollinger Bands window
     bollinger_std_dev=2,  # Bollinger Bands standard deviation
-    rsi_oversold_zone=38,  # RSI oversold zone
-    rsi_overbought_zone=62,  # RSI overbought zone
+    rsi_oversold_zone=35,  # RSI oversold zone
+    rsi_overbought_zone=65,  # RSI overbought zone
     rsi_length=9,  # RSI calculation period
     sleep_time=1  # Time to sleep between checks (in seconds)
 ):
@@ -235,8 +239,9 @@ def track_trade(
         # Define minimum target profit for exit
         min_profit = 0.1 * max_profit
         rush_profit = 0.025 * max_profit
-        micro_profit = 0.70 * max_profit
+        micro_profit = 0.80 * max_profit
         price_reversal = get_price_reversal(symbol, side)
+
 
         # 3. Call detect_exit
         rsi_exit_decision = check_exit_conditions(symbol,rsi_overbought_zone,rsi_oversold_zone, side)
@@ -245,6 +250,7 @@ def track_trade(
         if side == 'BUY':
             profit_relative = ((latest_close - entry_price) / entry_price) * 100
             loss_relative = ((entry_price - latest_close) / entry_price) * 100
+            usdt_profit = amount * (latest_close - entry_price)
 
             boll_reversal_profit = (
                 (latest_close >= latest_upper_band) or 
@@ -253,6 +259,7 @@ def track_trade(
         elif side == 'SELL':
             profit_relative = ((entry_price - latest_close) / entry_price) * 100
             loss_relative = ((latest_close - entry_price) / entry_price) * 100
+            usdt_profit =  amount * (entry_price - latest_close)
 
             boll_reversal_profit = (
                 (latest_close <= latest_lower_band) or 
@@ -261,7 +268,7 @@ def track_trade(
 
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL - v1.62] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v1.63] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         # Define a flag for whether the position has already been closed
         position_closed = False
@@ -279,13 +286,13 @@ def track_trade(
         if profit_relative > rush_profit:
             if rsi_exit_decision['exit_signal']:
                 print(f"[* * * * CLOSED] {symbol}: {side} due to RSI Exit Decission Met.")
-                close_position(symbol, side, profit_relative, rsi_exit_decision["reason"])
+                close_position(symbol, side, profit_relative, rsi_exit_decision["reason"], usdt_profit)
                 position_closed = True
                 return {"close_position": True, "reason": rsi_exit_decision["reason"]}
             elif boll_reversal_profit:
                 print(f"[* * * * CLOSED] {symbol}: {side} due to Bollinger Exit Decission Met.")
                 reason = 'Bollinger Exit Decission Met'
-                close_position(symbol, side, profit_relative, reason)
+                close_position(symbol, side, profit_relative, reason, usdt_profit)
                 position_closed = True
                 return {"close_position": True, "reason": reason} 
             
@@ -300,7 +307,7 @@ def track_trade(
 
             for condition, reason in exit_conditions:
                 if condition and not position_closed:
-                    close_position(symbol, side, profit_relative, reason)
+                    close_position(symbol, side, profit_relative, reason, usdt_profit)
                     print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
                     position_closed = True
                     return {"close_position": True, "reason": reason}
@@ -315,7 +322,7 @@ def track_trade(
 
             for condition, reason in exit_conditions:
                 if condition:
-                    close_position(symbol, side, profit_relative, reason)
+                    close_position(symbol, side, profit_relative, reason, usdt_profit)
                     print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
                     position_closed = True
                     return {"close_position": True, "reason": reason}
