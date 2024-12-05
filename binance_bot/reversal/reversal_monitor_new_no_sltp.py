@@ -276,7 +276,7 @@ def track_trade(
         # 1. Take profit opportunity
         if profit_relative >= micro_profit:
             reason = 'Price > Micro Profit'
-            close_position(symbol, side, profit_relative, reason)
+            close_position(symbol, side, profit_relative, reason, usdt_profit)
             print(f"[* * * * CLOSED] {symbol} Closed due to micro profit > {micro_profit:.2f}% with profit of {profit_relative:.2f}%.")
             position_closed = True
             return {"close_position": True, "reason": "Micro Profit Met"}
