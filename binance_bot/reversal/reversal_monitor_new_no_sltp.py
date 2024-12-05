@@ -136,7 +136,7 @@ def get_data_rev(symbol, interval='1m', retries=5, delay=2):
 
 
 # Function to close a position
-def close_position(symbol, side, profit_relative):
+def close_position(symbol, side, profit_relative, reason):
     try:
         positions = client.futures_account(recvWindow=10000)['positions']
         for pos in positions:
@@ -151,7 +151,7 @@ def close_position(symbol, side, profit_relative):
                         quantity=quantity
                 )
                 print(f"[CLOSE ORDER] Position closed for {symbol} ({side}).")
-                message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity} {symbol}\n Profit: {profit_relative:.2f}%"
+                message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity} {symbol}\n Profit: {profit_relative:.2f}%\n Reason: {reason} "
                 send_telegram_message(message)
                 return
     except Exception as e:
@@ -268,8 +268,6 @@ def detect_reversal_trend(symbol):
 
 # track the market movement and decide the perfect timing for exit.
 
-import time
-
 def track_trade(
     symbol,
     side,
@@ -296,7 +294,6 @@ def track_trade(
         if df is None or df.empty:
             print(f"[{symbol}] No data available for tracking.")
             return {"close_position": False, "reason": "No data"}
-            
 
         # Calculate Bollinger Bands
         df['sma'] = df['close'].rolling(window=bollinger_window).mean()
@@ -311,8 +308,7 @@ def track_trade(
         if df[['upper_band', 'lower_band']].isna().all().any() or df['rsi'].isna().all():
             print(f"[{symbol}] Insufficient indicator data.")
             return {"close_position": False, "reason": "Insufficient indicator data"}
-        
-        
+
         # Fetch latest values
         latest_close = get_current_price(symbol)
 
@@ -324,116 +320,108 @@ def track_trade(
         previous_rsi = df['rsi'].iloc[-2]
         rsi_delta = previous_rsi - latest_rsi
         closing_price = latest_close
-        
-        # define minimum target profit for exit
+
+        # Define minimum target profit for exit
         min_profit = 0.1 * max_profit
-        rush_profit = 0.01 * max_profit
+        rush_profit = 0.025 * max_profit
         micro_profit = 0.35 * max_profit
-        # check price reversal for exit
-        price_reversal = get_price_reversal(symbol,side)
-        #price_reversal = get_price_reversal_new(symbol,side)
-        
+        price_reversal = get_price_reversal(symbol, side)
 
         # Calculate PnL
         if side == 'BUY':
-            # For BUY position, profit is when current price > entry price
             profit_relative = ((latest_close - entry_price) / entry_price) * 100
-            # For BUY position, loss is when current price < entry price
             loss_relative = ((entry_price - latest_close) / entry_price) * 100
 
-            # RSI reversal
+            # RSI and Bollinger reversals
             rsi_reversal_profit = (
-                (latest_rsi >= rsi_overbought_zone) or # overbought
-                (latest_rsi < rsi_overbought_zone and previous_rsi >= rsi_overbought_zone) # overbought reversal
+                (latest_rsi >= rsi_overbought_zone) or 
+                (latest_rsi <= rsi_overbought_zone and previous_rsi >= rsi_overbought_zone) or
+                (rsi_oversold_zone < latest_rsi < 50 and previous_rsi > 50)
             )
-            # Bollinger Reversal
             boll_reversal_profit = (
-                (latest_close >= latest_upper_band)# overbought
+                (latest_close >= latest_upper_band) or 
+                (latest_close <= latest_upper_band and previous_close > latest_upper_band)
             )
         elif side == 'SELL':
-            # For SELL position, profit is when current price < entry price
             profit_relative = ((entry_price - latest_close) / entry_price) * 100
-            # For SELL position, loss is when current price > entry price
             loss_relative = ((latest_close - entry_price) / entry_price) * 100
 
-            # RSI reversal
+            # RSI and Bollinger reversals
             rsi_reversal_profit = (
-                (latest_rsi <= rsi_oversold_zone) or # oversold met
-                (latest_rsi > rsi_oversold_zone and previous_rsi < rsi_oversold_zone) # oversold reversal met
+                (latest_rsi <= rsi_oversold_zone) or 
+                (latest_rsi >= rsi_oversold_zone and previous_rsi < rsi_oversold_zone) or 
+                (rsi_overbought_zone > latest_rsi > 50 and previous_rsi < 50) 
             )
-            #Bollinger reversal
-            boll_reversal_profit =  (
-                (latest_close <= latest_lower_band) # touching lower band 
+            boll_reversal_profit = (
+                (latest_close <= latest_lower_band) or 
+                (latest_close >= latest_lower_band and previous_close < latest_lower_band)
             )
-        #print(f"[Martingle] Martingle = {martingle}, Reversal_averaging:{reversal_for_averaging}, Amount:{amount}, original_amount: {amount_2}")
+
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
         print(f"[Tracking PnL - v1.5x] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
-        
-        # 1. opportunis taking profit
+        # Define a flag for whether the position has already been closed
+        position_closed = False
+
+        # 1. Take profit opportunity
         if profit_relative >= micro_profit:
-            close_position(symbol, side, profit_relative)
-            print(f"[* * * * CLOSED] {symbol} Closed due to profit > min profit and Micro Profit Met with profit of {profit_relative:.2f}%.")
-            return {"close_position": True, "reason": "Micro Profit Met"}   
+            reason = 'Price > Micro Profit'
+            close_position(symbol, side, profit_relative, reason)
+            print(f"[* * * * CLOSED] {symbol} Closed due to micro profit > {micro_profit:.2f}% with profit of {profit_relative:.2f}%.")
+            position_closed = True
+            return {"close_position": True, "reason": "Micro Profit Met"}
 
-        # 2. met bollinger and rsi reversal
-        if profit_relative >= rush_profit and rsi_reversal_profit and boll_reversal_profit:
-            close_position(symbol, side, profit_relative)
-            print(f"[* * * * CLOSED] {symbol} Closed due to both Bollinger and RSI reversal with profit of {profit_relative:.2f}%.")
-            return {"close_position": True, "reason": "Bollinger reversal and RSI reversal"}   
-            
-        # 3a. profit and rsi reversal
-        if profit_relative >= rush_profit and rsi_reversal_profit:
-            close_position(symbol, side, profit_relative)
-            print(f"[* * * * CLOSED] {symbol} Closed due to RSI reversal with profit of {profit_relative:.2f}%.")
-            return {"close_position": True, "reason": "RSI reversal profit"} 
+        # 2. Meet Bollinger and RSI reversal conditions
+        if profit_relative > rush_profit:
+            exit_conditions = [
+                (rsi_reversal_profit and boll_reversal_profit, "Price > Rush_profit and met Bollinger and RSI reversal"),
+                (rsi_reversal_profit, "Price > Rush_profit and RSI reversal"),
+                (boll_reversal_profit, "Price > Rush_profit and Bollinger reversal"),
+            ]
 
-        # 3b. met bollinger reversal
-        if profit_relative >= rush_profit and boll_reversal_profit:
-            close_position(symbol, side, profit_relative)
-            print(f"[* * * * CLOSED] {symbol} Closed due to Bollinger reversal with profit of {profit_relative:.2f}%.")
-            return {"close_position": True, "reason": "Bollinger reversal"}  
+            for condition, reason in exit_conditions:
+                if condition and not position_closed:
+                    close_position(symbol, side, profit_relative, reason)
+                    print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
+                    position_closed = True
+                    return {"close_position": True, "reason": reason}
 
-        # 4. Check if profit but not met the max profit and reversal detected
+        # 3. Check if profit but not yet max profit and reversal detected
         if min_profit <= profit_relative <= max_profit:
-            print(f"Checking exit conditions for {symbol}: Profit={profit_relative:.2f}%")
-            # List of exit conditions
             exit_conditions = [
                 (boll_reversal_profit, "Price crossed Bollinger Bands after profit"),
-                (rsi_reversal_profit, f"Profit > {min_profit:.2f}% with Potential RSI reversal"),
-                (price_reversal, f"Profit > {min_profit:.2f}% with Potential Price reversal"),
+                (rsi_reversal_profit, "Profit > min profit with potential RSI reversal"),
+                (price_reversal, "Profit > min profit with potential price reversal"),
+            ]
+
+            for condition, reason in exit_conditions:
+                if condition and not position_closed:
+                    close_position(symbol, side, profit_relative, reason)
+                    print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
+                    position_closed = True
+                    return {"close_position": True, "reason": reason}
+
+        # 4. Check if profit met max profit and no reversal detected
+        if profit_relative >= max_profit and not position_closed:
+            exit_conditions = [
+                (boll_reversal_profit, "Price crossed Bollinger Bands after profit"),
+                (rsi_reversal_profit, "Profit > max profit with potential RSI reversal"),
+                (price_reversal, "Profit > max profit with potential price reversal"),
             ]
 
             for condition, reason in exit_conditions:
                 if condition:
-                    close_position(symbol, side, profit_relative)
+                    close_position(symbol, side, profit_relative, reason)
                     print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
+                    position_closed = True
                     return {"close_position": True, "reason": reason}
 
-            print(f"No exit condition met for {symbol}.")
-            return {"close_position": False, "reason": "No exit condition met"}    
-        
-        # 5. Check if profit met the max profit and no reversal detected
-        if profit_relative >= max_profit: 
-            print(f"Checking exit conditions for {symbol}: Profit={profit_relative:.2f}%")
-            
-            # List of exit conditions
-            exit_conditions = [
-                (boll_reversal_profit, "Price crossed Bollinger Bands after profit"),
-                (rsi_reversal_profit, f"Profit > {min_profit:.2f}% with Potential RSI reversal"),
-                (price_reversal, f"Profit > {min_profit:.2f}% with Potential Price reversal"),
-            ]
-
-            for condition, reason in exit_conditions:
-                if condition:
-                    close_position(symbol, side, profit_relative)
-                    print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
-                    return {"close_position": True, "reason": reason}
-        
+        # No exit condition met
+        if not position_closed:
             print(f"No exit condition met for {symbol}.")
             return {"close_position": False, "reason": "No exit condition met"}
-        
+
     except Exception as e:
         print(f"[{symbol}] Error in trade tracking: {e}")
         return {"close_position": False, "reason": str(e)}

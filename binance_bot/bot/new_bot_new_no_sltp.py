@@ -388,7 +388,7 @@ def check_existing_orders(symbol, trend):
 
 # placing future order at the mark price 
 
-def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_trade):
+def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_trade, trend_condition):
     """
     Place a market order to open a position without setting stop loss or take profit.
     """
@@ -427,7 +427,7 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
             positionSide=position_side  # Specify the position side (LONG or SHORT)
         )
         print(f"Placed market order: {order}")
-        message = f"+ + + Placed Order {symbol}\nSide: {trend}\nQuantity: {quantity} {symbol}\n Size:{usdt_to_trade}\n Leverage: {leverage}\n Entry Price:{entry_price}"
+        message = f"+ + + Placed Order\n{symbol}: {trend}\nTrend:{trend_condition}\nQuantity: {quantity} {symbol}\n Size:{usdt_to_trade}\n Leverage: {leverage}\n Entry Price:{entry_price}"
         send_telegram_message(message)
 
     except Exception as e:
@@ -441,7 +441,7 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
 import threading
 
 # Initialize the list of coin pairs with a default value
-coin_pairs = ['BCHUSDT','ATOMUSDT','DOTUSDT','LTCUSDT','XMRUSDT','ETHUSDT','INJUSDT','XRPUSDT']  # Example with 4 pairs
+coin_pairs = ['BCHUSDT','ATOMUSDT','DOTUSDT','LTCUSDT','XMRUSDT','ETHUSDT','INJUSDT','XRPUSDT','BNBUSDT']  # Example with 4 pairs
 # Flag to control whether the fetch_recent_orders task should be canceled
 cancel_fetch_orders = False
 # Function to handle trading for each symbol
@@ -481,7 +481,8 @@ def run_symbol_task(symbol):
             leverage, 
             quantity,
             entry_price, 
-            usdt_to_trade
+            usdt_to_trade,
+            trend_condition
         )
         
     #else:
