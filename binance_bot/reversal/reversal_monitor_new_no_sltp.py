@@ -150,7 +150,7 @@ def condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi
 #RSI weak signal
 def condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
     if position_side == 'BUY':
-        if rsi_current > rsi_oversold and rsi_current < rsi_previous and rsi_current < 50 and rsi_previous >= 50:
+        if rsi_current > rsi_oversold and rsi_current < rsi_previous and rsi_current < 50 and rsi_previous <= 50:
             return True
     elif position_side == 'SELL':
         if rsi_current < rsi_overbought and rsi_current > rsi_previous and rsi_current > 50 and rsi_previous >= 50:
