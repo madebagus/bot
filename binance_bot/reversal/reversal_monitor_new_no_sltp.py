@@ -239,7 +239,7 @@ def track_trade(
         # Define minimum target profit for exit
         min_profit = 0.1 * max_profit
         rush_profit = 0.025 * max_profit
-        micro_profit = 0.80 * max_profit
+        micro_profit = 1.5 * max_profit
         price_reversal = get_price_reversal(symbol, side)
 
 
@@ -272,7 +272,8 @@ def track_trade(
 
         # Define a flag for whether the position has already been closed
         position_closed = False
-
+        
+        
         # 1. Take profit opportunity
         if profit_relative >= micro_profit:
             reason = 'Price > Micro Profit'
