@@ -87,54 +87,6 @@ def get_data(symbol, interval, retries=5, delay=2):
                 return None
 
 
-def get_data_rev(symbol, interval='1m', retries=5, delay=2):
-    """
-    Fetch data for the specified symbol and interval, with retry logic.
-    """
-    attempt = 0
-
-    while attempt < retries:
-        try:
-            klines = client.futures_klines(symbol=symbol, interval=interval, limit=50)
-            df = pd.DataFrame(klines, columns=[
-                'timestamp', 'open', 'high', 'low', 'close', 'volume',
-                'close_time', 'qav', 'trades', 'tbav', 'tbqav', 'ignore'
-            ])
-
-            # Ensure numeric columns are properly converted
-            df['close'] = pd.to_numeric(df['close'], errors='coerce')
-            df['high'] = pd.to_numeric(df['high'], errors='coerce')
-            df['low'] = pd.to_numeric(df['low'], errors='coerce')
-            df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
-
-            # Calculate indicators
-            df['ema_short'] = ta.trend.ema_indicator(df['close'], window=7)
-            df['ema_long'] = ta.trend.ema_indicator(df['close'], window=14)
-            df['rsi'] = ta.momentum.rsi(df['close'], window=14)
-
-            # Drop rows with NaN values
-            df = df.dropna()
-
-            # Validate DataFrame before returning
-            if df.empty:
-                raise ValueError("DataFrame is empty after processing.")
-            
-            # Debug print: check the first few rows
-            #print(df.head())
-            
-            return df
-
-        except Exception as e:
-            print(f"Error fetching data for {symbol}: {e}")
-            attempt += 1
-            if attempt < retries:
-                print(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
-            else:
-                print(f"Failed to fetch data for {symbol} after {retries} attempts.")
-                return None
-
-
 # Function to close a position
 def close_position(symbol, side, profit_relative, reason):
     try:
@@ -151,7 +103,7 @@ def close_position(symbol, side, profit_relative, reason):
                         quantity=quantity
                 )
                 print(f"[CLOSE ORDER] Position closed for {symbol} ({side}).")
-                message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity} {symbol}\n Profit: {profit_relative:.2f}%\n Reason: {reason} "
+                message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity} {symbol}\nProfit: {profit_relative:.2f}%\nReason: {reason} "
                 send_telegram_message(message)
                 return
     except Exception as e:
@@ -177,94 +129,56 @@ def averaging_order(symbol, side, amount):
         print(f"Error placing averaging order for {symbol}: {e}")
 
 
-   
-def calculate_rsi(series, period):
-    """
-    Calculate RSI using a pandas Series of closing prices.
+# Exit condition functions
+def condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+    if position_side == 'BUY' and rsi_current >= rsi_overbought:
+        return True
+    elif position_side == 'SELL' and rsi_current <= rsi_oversold:
+        return True
+    return False
 
-    Args:
-        series (pd.Series): The Series of closing prices.
-        period (int): The lookback period for RSI calculation.
+def condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+    if position_side == 'BUY' and rsi_previous < rsi_overbought and rsi_current >= rsi_overbought:
+        return True
+    elif position_side == 'SELL' and rsi_previous > rsi_oversold and rsi_current <= rsi_oversold:
+        return True
+    return False
 
-    Returns:
-        pd.Series: A Series containing the RSI values.
-    """
-    # Calculate price differences
-    delta = series.diff()
+def condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
+    if position_side == 'BUY':
+        if rsi_current >= rsi_oversold and rsi_current < 50 and rsi_previous > 50:
+            return True
+    elif position_side == 'SELL':
+        if rsi_current <= rsi_overbought and rsi_current > 50 and rsi_previous < 50:
+            return True
+    return False
 
-    # Calculate gains and losses
-    gain = delta.where(delta > 0, 0)
-    loss = -delta.where(delta < 0, 0)
+def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
+    # Fetch data for the specified symbol and interval
+    df = get_data(symbol, '1m')
+    if df is not None:
+        # Get the last two RSI values from the DataFrame
+        rsi_current = df['rsi'].iloc[-1]
+        rsi_previous = df['rsi'].iloc[-2]
 
-    # Calculate rolling averages
-    avg_gain = gain.rolling(window=period, min_periods=1).mean()
-    avg_loss = loss.rolling(window=period, min_periods=1).mean()
+    exit_signal = False
+    reason = None  # Default reason when no exit signal is triggered
 
-    # Calculate RSI
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
+    # Check the exit conditions
+    if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+        reason = 'RSI in over bought/sold'
+        exit_signal = True
+    elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+        reason = 'RSI suddent fail break out/down'
+        exit_signal = True
+    elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
+        reason = 'RSI weak momentum'
+        exit_signal = True
 
-    # Handle cases where avg_loss is zero (set RSI to 100)
-    rsi[avg_loss == 0] = 100
-
-    # Handle cases where avg_gain is zero (set RSI to 0)
-    rsi[avg_gain == 0] = 0
-
-    return rsi
-
-# calculate reversal for exit, if side = BUY and this function return SELL then reversal spoted 
-
-def detect_reversal_trend(symbol):
-    """
-    Detect volume spikes and confirm with RSI(9), Bollinger Bands(9), and ADX.
-    Returns BUY, SELL, or HOLD based on conditions.
-    """
-    df = get_data_rev(symbol)
-    if df is None or df.empty:
-        print(f"[{symbol}] No data available for tracking.")
-        return {"close_position": False, "reason": "No data"}
-    
-    try:
-        # Validate input DataFrame
-        required_columns = {'close', 'high', 'low', 'volume'}
-        if not required_columns.issubset(df.columns):
-            missing_columns = required_columns - set(df.columns)
-            return {"signal": "NONE-NONE", "reason": f"Missing required columns: {', '.join(missing_columns)}"}
-
-        if len(df) < 10:  # Ensure enough data points
-            return {"signal": "NONE-10", "reason": "Insufficient data points"}
-
-        # Calculate indicators
-        df['rsi'] = ta.momentum.rsi(df['close'], window=9)
-        sma = df['close'].rolling(window=9).mean()
-        std = df['close'].rolling(window=9).std()
-        df['upper_band'] = sma + (2 * std)
-        df['lower_band'] = sma - (2 * std)
-        df['adx'] = ta.trend.adx(df['high'], df['low'], df['close'], window=14)
-
-        # Volume spike detection
-        mean_volume = df['volume'].mean()
-        current_volume = df['volume'].iloc[-1]
-        volume_spike = current_volume > 1.5 * mean_volume
-
-        # Get latest indicator values
-        rsi = df['rsi'].iloc[-1]
-        close_price = df['close'].iloc[-1]
-        upper_band = df['upper_band'].iloc[-1]
-        lower_band = df['lower_band'].iloc[-1]
-        
-        # Decision logic
-        if (rsi < 30 or close_price <= lower_band) and volume_spike:
-            return {"signal": "BUY", "reason": "RSI oversold, price near lower band, and volume spike"}
-        elif (rsi > 70 or close_price >= upper_band) and volume_spike:
-            return {"signal": "SELL", "reason": "RSI overbought, price near upper band, and volume spike"}
-        else:
-            return {"signal": "HOLD", "reason": "No strong signal"}
-
-    except Exception as e:
-        return {"signal": "NONE-ERR", "reason": f"Error: {e}"}
-
-
+    return {
+        'exit_signal': exit_signal,
+        'reason': reason if reason is not None else 'No exit signal detected'
+    }
 
 # track the market movement and decide the perfect timing for exit.
 
@@ -301,9 +215,6 @@ def track_trade(
         df['upper_band'] = df['sma'] + (df['std_dev'] * bollinger_std_dev)
         df['lower_band'] = df['sma'] - (df['std_dev'] * bollinger_std_dev)
 
-        # Calculate RSI
-        df['rsi'] = calculate_rsi(df['close'], rsi_length)
-
         # Validate indicator data
         if df[['upper_band', 'lower_band']].isna().all().any() or df['rsi'].isna().all():
             print(f"[{symbol}] Insufficient indicator data.")
@@ -324,20 +235,17 @@ def track_trade(
         # Define minimum target profit for exit
         min_profit = 0.1 * max_profit
         rush_profit = 0.025 * max_profit
-        micro_profit = 0.35 * max_profit
+        micro_profit = 0.70 * max_profit
         price_reversal = get_price_reversal(symbol, side)
+
+        # 3. Call detect_exit
+        rsi_exit_decision = check_exit_conditions(symbol,rsi_overbought_zone,rsi_oversold_zone, side)
 
         # Calculate PnL
         if side == 'BUY':
             profit_relative = ((latest_close - entry_price) / entry_price) * 100
             loss_relative = ((entry_price - latest_close) / entry_price) * 100
 
-            # RSI and Bollinger reversals
-            rsi_reversal_profit = (
-                (latest_rsi >= rsi_overbought_zone) or 
-                (latest_rsi <= rsi_overbought_zone and previous_rsi >= rsi_overbought_zone) or
-                (rsi_oversold_zone < latest_rsi < 50 and previous_rsi > 50)
-            )
             boll_reversal_profit = (
                 (latest_close >= latest_upper_band) or 
                 (latest_close <= latest_upper_band and previous_close > latest_upper_band)
@@ -346,12 +254,6 @@ def track_trade(
             profit_relative = ((entry_price - latest_close) / entry_price) * 100
             loss_relative = ((latest_close - entry_price) / entry_price) * 100
 
-            # RSI and Bollinger reversals
-            rsi_reversal_profit = (
-                (latest_rsi <= rsi_oversold_zone) or 
-                (latest_rsi >= rsi_oversold_zone and previous_rsi < rsi_oversold_zone) or 
-                (rsi_overbought_zone > latest_rsi > 50 and previous_rsi < 50) 
-            )
             boll_reversal_profit = (
                 (latest_close <= latest_lower_band) or 
                 (latest_close >= latest_lower_band and previous_close < latest_lower_band)
@@ -359,7 +261,7 @@ def track_trade(
 
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL - v1.5x] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v1.62] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         # Define a flag for whether the position has already been closed
         position_closed = False
@@ -371,27 +273,28 @@ def track_trade(
             print(f"[* * * * CLOSED] {symbol} Closed due to micro profit > {micro_profit:.2f}% with profit of {profit_relative:.2f}%.")
             position_closed = True
             return {"close_position": True, "reason": "Micro Profit Met"}
+        
 
         # 2. Meet Bollinger and RSI reversal conditions
         if profit_relative > rush_profit:
-            exit_conditions = [
-                (rsi_reversal_profit and boll_reversal_profit, "Price > Rush_profit and met Bollinger and RSI reversal"),
-                (rsi_reversal_profit, "Price > Rush_profit and RSI reversal"),
-                (boll_reversal_profit, "Price > Rush_profit and Bollinger reversal"),
-            ]
-
-            for condition, reason in exit_conditions:
-                if condition and not position_closed:
-                    close_position(symbol, side, profit_relative, reason)
-                    print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
-                    position_closed = True
-                    return {"close_position": True, "reason": reason}
+            if rsi_exit_decision['exit_signal']:
+                print(f"[* * * * CLOSED] {symbol}: {side} due to RSI Exit Decission Met.")
+                close_position(symbol, side, profit_relative, rsi_exit_decision["reason"])
+                position_closed = True
+                return {"close_position": True, "reason": rsi_exit_decision["reason"]}
+            elif boll_reversal_profit:
+                print(f"[* * * * CLOSED] {symbol}: {side} due to Bollinger Exit Decission Met.")
+                reason = 'Bollinger Exit Decission Met'
+                close_position(symbol, side, profit_relative, reason)
+                position_closed = True
+                return {"close_position": True, "reason": reason} 
+            
 
         # 3. Check if profit but not yet max profit and reversal detected
         if min_profit <= profit_relative <= max_profit:
             exit_conditions = [
                 (boll_reversal_profit, "Price crossed Bollinger Bands after profit"),
-                (rsi_reversal_profit, "Profit > min profit with potential RSI reversal"),
+                (rsi_exit_decision['exit_signal'], rsi_exit_decision["reason"]),
                 (price_reversal, "Profit > min profit with potential price reversal"),
             ]
 
@@ -406,7 +309,7 @@ def track_trade(
         if profit_relative >= max_profit and not position_closed:
             exit_conditions = [
                 (boll_reversal_profit, "Price crossed Bollinger Bands after profit"),
-                (rsi_reversal_profit, "Profit > max profit with potential RSI reversal"),
+                (rsi_exit_decision['exit_signal'], rsi_exit_decision["reason"]),
                 (price_reversal, "Profit > max profit with potential price reversal"),
             ]
 
@@ -437,10 +340,10 @@ def adx_indicator(df):
         raise ValueError("Dataframe must contain 'high', 'low', and 'close' columns.")
     
     # Calculate ADX using pandas_ta with a default length of 14
-    adx_df = pd_ta.adx(df['high'], df['low'], df['close'], length=14)  # ADX returns a DataFrame
+    adx_df = pd_ta.adx(df['high'], df['low'], df['close'], length=9)  # ADX returns a DataFrame
     
     # Select only the ADX column from the resulting DataFrame
-    df['ADX'] = adx_df['ADX_14']
+    df['ADX'] = adx_df['ADX_9']
 
     # Drop any NaN values that may be present
     df = df.dropna(subset=['ADX'])
