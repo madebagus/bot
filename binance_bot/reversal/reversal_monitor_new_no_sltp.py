@@ -168,28 +168,16 @@ def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
     exit_signal = False
     reason = None  # Default reason when no exit signal is triggered
     
-    if symbol in ['XRPUSDT','ETHUSDT','INJUSDT']:
-        # Check the exit conditions
-        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+    # Check the exit conditions
+    if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
             reason = 'RSI in over bought/sold'
             exit_signal = True
-        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+    elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
             reason = 'RSI fail break out/down'
             exit_signal = True
-        elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
+    elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
             reason = 'RSI weak momentum'
             exit_signal = True
-    else:
-        # Check the exit conditions
-        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
-            reason = 'RSI in over bought/sold'
-            exit_signal = True
-        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
-            reason = 'RSI fail break out/down'
-            exit_signal = True
-        #elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
-        #    reason = 'RSI weak momentum'
-        #    exit_signal = True
 
     return {
         'exit_signal': exit_signal,
@@ -207,8 +195,8 @@ def track_trade(
     max_profit=1,  # Minimum target profit in percentage
     bollinger_window=9,  # Bollinger Bands window
     bollinger_std_dev=2,  # Bollinger Bands standard deviation
-    rsi_oversold_zone=30,  # RSI oversold zone
-    rsi_overbought_zone=70,  # RSI overbought zone
+    rsi_oversold_zone=35,  # RSI oversold zone
+    rsi_overbought_zone=65,  # RSI overbought zone
     rsi_length=9,  # RSI calculation period
     sleep_time=1  # Time to sleep between checks (in seconds)
 ):

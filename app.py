@@ -21,7 +21,7 @@ def start_status_scheduler():
     print("Starting Status Scheduler...")
     while True:
         send_status_message()
-        time.sleep(300)  # Send every 30 minutes (1800 seconds)
+        time.sleep(1800)  # Send every 30 minutes (1800 seconds)
 
 # Function to run the reversal monitor in a separate thread
 def start_profit_monitor():
