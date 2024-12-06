@@ -268,7 +268,7 @@ def track_trade(
 
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL - v1.63] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v1.65] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         # Define a flag for whether the position has already been closed
         position_closed = False
