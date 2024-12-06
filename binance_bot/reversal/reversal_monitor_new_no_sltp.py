@@ -167,17 +167,29 @@ def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
 
     exit_signal = False
     reason = None  # Default reason when no exit signal is triggered
-
-    # Check the exit conditions
-    if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
-        reason = 'RSI in over bought/sold'
-        exit_signal = True
-    elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
-        reason = 'RSI fail break out/down'
-        exit_signal = True
-    #elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
-    #    reason = 'RSI weak momentum'
-    #    exit_signal = True
+    
+    if symbol in ['XRPUSDT','ETHUSDT','INJUSDT']:
+        # Check the exit conditions
+        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+            reason = 'RSI in over bought/sold'
+            exit_signal = True
+        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+            reason = 'RSI fail break out/down'
+            exit_signal = True
+        elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
+            reason = 'RSI weak momentum'
+            exit_signal = True
+    else:
+        # Check the exit conditions
+        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+            reason = 'RSI in over bought/sold'
+            exit_signal = True
+        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+            reason = 'RSI fail break out/down'
+            exit_signal = True
+        #elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
+        #    reason = 'RSI weak momentum'
+        #    exit_signal = True
 
     return {
         'exit_signal': exit_signal,
@@ -257,6 +269,7 @@ def track_trade(
                 (latest_close <= latest_upper_band and previous_close > latest_upper_band)
             )
         elif side == 'SELL':
+            amount = amount * -1
             profit_relative = ((entry_price - latest_close) / entry_price) * 100
             loss_relative = ((latest_close - entry_price) / entry_price) * 100
             usdt_profit =  amount * (entry_price - latest_close)
@@ -268,7 +281,7 @@ def track_trade(
 
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL - v1.65] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v1.66] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         # Define a flag for whether the position has already been closed
         position_closed = False
