@@ -173,11 +173,11 @@ def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
         reason = 'RSI in over bought/sold'
         exit_signal = True
     elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
-        reason = 'RSI suddent fail break out/down'
+        reason = 'RSI fail break out/down'
         exit_signal = True
-    elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
-        reason = 'RSI weak momentum'
-        exit_signal = True
+    #elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
+    #    reason = 'RSI weak momentum'
+    #    exit_signal = True
 
     return {
         'exit_signal': exit_signal,
