@@ -15,6 +15,7 @@ from decimal import Decimal, ROUND_DOWN
 from decimal import Decimal
 import pandas_ta as pd_ta
 from binance_bot.messaging.chat_bot import send_telegram_message
+from binance_bot.data.database_management import insert_orders
 
 
 # Initialize the blueprint for the bot
@@ -428,7 +429,10 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
         )
         print(f"Placed market order: {order}")
         message = f"+ + + Placed Order {symbol}\nSide: {trend}\nTrend: {trend_condition}\nQuantity: {quantity}\nSize:{usdt_to_trade}\nLeverage: {leverage}\nEntry Price:{entry_price}"
+        # send telegram message
         send_telegram_message(message)
+        # insert to database for analysis
+        insert_orders(symbol,trend,entry_price,quantity)
 
     except Exception as e:
         print(f"Error placing order for {symbol} : {e}")

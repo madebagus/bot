@@ -11,7 +11,7 @@ import pandas_ta as pd_ta
 from conn_ssh import create_conn
 import time
 from binance_bot.messaging.chat_bot import send_telegram_message
-#from data.database_management import update_order_in_db
+from binance_bot.data.database_management import update_orders
 
 
 # Get All Config SSH and DB
@@ -88,7 +88,7 @@ def get_data(symbol, interval, retries=5, delay=2):
 
 
 # Function to close a position
-def close_position(symbol, side, profit_relative, reason, usdt_profit):
+def close_position(symbol, side, profit_relative, reason, usdt_profit, closing_price):
     try:
         positions = client.futures_account(recvWindow=10000)['positions']
         for pos in positions:
@@ -105,6 +105,7 @@ def close_position(symbol, side, profit_relative, reason, usdt_profit):
                 print(f"[CLOSE ORDER] Position closed for {symbol} ({side}).")
                 message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity}\nProfit: {profit_relative:.3f}%\nProfit USDT: {usdt_profit:.3f}\nReason: {reason} "
                 send_telegram_message(message)
+                update_orders(symbol,side,closing_price)
                 return
     except Exception as e:
         print(f"Error closing position for {symbol}: {e}")
@@ -278,7 +279,7 @@ def track_trade(
         # 1. Take profit opportunity
         if profit_relative >= micro_profit:
             reason = 'Price > Micro Profit'
-            close_position(symbol, side, profit_relative, reason, usdt_profit)
+            close_position(symbol, side, profit_relative, reason, usdt_profit, latest_close)
             print(f"[* * * * CLOSED] {symbol} Closed due to micro profit > {micro_profit:.2f}% with profit of {profit_relative:.2f}%.")
             position_closed = True
             return {"close_position": True, "reason": "Micro Profit Met"}
@@ -288,13 +289,13 @@ def track_trade(
         if profit_relative > rush_profit:
             if rsi_exit_decision['exit_signal']:
                 print(f"[* * * * CLOSED] {symbol}: {side} due to RSI Exit Decission Met.")
-                close_position(symbol, side, profit_relative, rsi_exit_decision["reason"], usdt_profit)
+                close_position(symbol, side, profit_relative, rsi_exit_decision["reason"], usdt_profit, latest_close)
                 position_closed = True
                 return {"close_position": True, "reason": rsi_exit_decision["reason"]}
             elif boll_reversal_profit:
                 print(f"[* * * * CLOSED] {symbol}: {side} due to Bollinger Exit Decission Met.")
                 reason = 'Bollinger Exit Decission Met'
-                close_position(symbol, side, profit_relative, reason, usdt_profit)
+                close_position(symbol, side, profit_relative, reason, usdt_profit, latest_close)
                 position_closed = True
                 return {"close_position": True, "reason": reason} 
             
@@ -309,7 +310,7 @@ def track_trade(
 
             for condition, reason in exit_conditions:
                 if condition and not position_closed:
-                    close_position(symbol, side, profit_relative, reason, usdt_profit)
+                    close_position(symbol, side, profit_relative, reason, usdt_profit, latest_close)
                     print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
                     position_closed = True
                     return {"close_position": True, "reason": reason}
@@ -324,7 +325,7 @@ def track_trade(
 
             for condition, reason in exit_conditions:
                 if condition:
-                    close_position(symbol, side, profit_relative, reason, usdt_profit)
+                    close_position(symbol, side, profit_relative, reason, usdt_profit,latest_close)
                     print(f"[* * * * CLOSED] {symbol} due to {reason} at {latest_close:.2f}")
                     position_closed = True
                     return {"close_position": True, "reason": reason}
