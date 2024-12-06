@@ -207,8 +207,8 @@ def track_trade(
     max_profit=1,  # Minimum target profit in percentage
     bollinger_window=9,  # Bollinger Bands window
     bollinger_std_dev=2,  # Bollinger Bands standard deviation
-    rsi_oversold_zone=35,  # RSI oversold zone
-    rsi_overbought_zone=65,  # RSI overbought zone
+    rsi_oversold_zone=30,  # RSI oversold zone
+    rsi_overbought_zone=70,  # RSI overbought zone
     rsi_length=9,  # RSI calculation period
     sleep_time=1  # Time to sleep between checks (in seconds)
 ):
