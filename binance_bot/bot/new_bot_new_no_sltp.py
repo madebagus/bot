@@ -432,7 +432,7 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
         # send telegram message
         send_telegram_message(message)
         # insert to database for analysis
-        insert_orders(symbol,trend,entry_price,quantity)
+        #insert_orders(symbol,trend,entry_price,quantity)
 
     except Exception as e:
         print(f"Error placing order for {symbol} : {e}")
