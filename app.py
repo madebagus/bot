@@ -4,7 +4,6 @@ import requests
 from flask import Flask
 from binance_bot.bot.new_bot_new_no_sltp import run_trading_bot_task
 from binance_bot.reversal.reversal_monitor_new_no_sltp import monitor_positions
-from binance_bot.data.database_management import fetch_and_upsert_order_history
 from binance_bot.messaging.chat_bot import send_status_message
 
 # Initialize the Flask application

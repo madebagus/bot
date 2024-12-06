@@ -238,8 +238,8 @@ def track_trade(
         closing_price = latest_close
 
         # Define minimum target profit for exit
-        min_profit = 0.1 * max_profit
-        rush_profit = 0.025 * max_profit
+        min_profit = 0.15 * max_profit
+        rush_profit = 0.05 * max_profit
         micro_profit = 1.5 * max_profit
         price_reversal = get_price_reversal(symbol, side)
 
@@ -270,7 +270,7 @@ def track_trade(
 
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL - v1.68] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v1.69] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         # Define a flag for whether the position has already been closed
         position_closed = False
