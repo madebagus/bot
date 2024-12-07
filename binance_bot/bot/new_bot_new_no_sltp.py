@@ -124,9 +124,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if(rsi < 20) or (rsi >= 20 and prev_rsi < 20): # Only entry after oversold reversal
+        if(rsi < 20) or (rsi >= 30 and prev_rsi < 30): # Only entry after oversold reversal
             rsi_dec = 'BUY' 
-        elif (rsi > 80) or (rsi <= 80 and prev_rsi > 80): # Only entry after overbough reversal 
+        elif (rsi > 80) or (rsi <= 70 and prev_rsi > 70): # Only entry after overbough reversal 
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -432,7 +432,7 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
         # send telegram message
         send_telegram_message(message)
         # insert to database for analysis
-        #insert_orders(symbol,trend,entry_price,quantity)
+        insert_orders(symbol,trend,entry_price,quantity)
 
     except Exception as e:
         print(f"Error placing order for {symbol} : {e}")

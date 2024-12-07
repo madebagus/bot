@@ -105,7 +105,7 @@ def close_position(symbol, side, profit_relative, reason, usdt_profit, closing_p
                 print(f"[CLOSE ORDER] Position closed for {symbol} ({side}).")
                 message = f"[* * * Closing Order] {symbol}\nSide: {side}\nQuantity: {quantity}\nProfit: {profit_relative:.3f}%\nProfit USDT: {usdt_profit:.3f}\nReason: {reason} "
                 send_telegram_message(message)
-                #update_orders(symbol,side,closing_price)
+                update_orders(symbol,side,closing_price)
                 return
     except Exception as e:
         print(f"Error closing position for {symbol}: {e}")
