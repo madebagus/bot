@@ -194,8 +194,8 @@ def track_trade(
     max_profit=1,  # Minimum target profit in percentage
     bollinger_window=9,  # Bollinger Bands window
     bollinger_std_dev=2,  # Bollinger Bands standard deviation
-    rsi_oversold_zone=30,  # RSI oversold zone
-    rsi_overbought_zone=70,  # RSI overbought zone
+    rsi_oversold_zone=35,  # RSI oversold zone
+    rsi_overbought_zone=65,  # RSI overbought zone
     rsi_length=9,  # RSI calculation period
     sleep_time=1  # Time to sleep between checks (in seconds)
 ):
@@ -268,7 +268,7 @@ def track_trade(
 
         # Log PnL
         profit_label = '* * PROFIT' if profit_relative > 0 else '~ ~ LOSS'
-        print(f"[Tracking PnL - v1.8] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
+        print(f"[Tracking PnL - v2.0] {symbol} {side} {profit_label} = {profit_relative:.2f}%")
 
         # Define a flag for whether the position has already been closed
         position_closed = False

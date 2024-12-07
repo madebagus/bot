@@ -23,31 +23,47 @@ if not API_KEY or not API_SECRET:
 # Create a Blueprint for wallet operations
 wallet_bp = Blueprint('wallet', __name__, url_prefix='/api/wallet/')
 
-from decimal import Decimal
+import time
 
-def get_total_wallet_balance():
-    """Fetch the total USDT balance in the futures wallet (available + used margin + unrealized PnL)."""
-    try:
-        # Fetch futures account balance
-        futures_account_info = client.futures_account_balance()
+def get_total_wallet_balance(max_retries=10, delay=2):
+    """
+    Fetch the total USDT balance in the futures wallet (available + used margin + unrealized PnL).
+    Retries until a valid balance is fetched or maximum retries are reached.
+
+    Parameters:
+        max_retries (int): Maximum number of retries.
+        delay (int): Delay (in seconds) between retries.
+
+    Returns:
+        Decimal: The total balance of USDT in the futures wallet.
+    """
+    for attempt in range(max_retries):
+        try:
+            # Fetch futures account balance
+            futures_account_info = client.futures_account_balance()
+            
+            # Find USDT asset and fetch its total balance
+            usdt_info = next(
+                (asset for asset in futures_account_info if asset['asset'] == 'USDT'),
+                None
+            )
+            
+            if usdt_info:
+                # Extract and sum relevant fields for total balance
+                total_balance = Decimal(usdt_info.get('balance', '0.0'))  # Total balance
+                return total_balance
+            else:
+                print(f"USDT balance not found in futures account. Attempt {attempt + 1}/{max_retries}.")
         
-        # Find USDT asset and fetch its total balance
-        usdt_info = next(
-            (asset for asset in futures_account_info if asset['asset'] == 'USDT'),
-            None
-        )
+        except Exception as e:
+            print(f"Error fetching total wallet balance (Attempt {attempt + 1}/{max_retries}): {e}")
         
-        if usdt_info:
-            # Extract and sum relevant fields for total balance
-            total_balance = Decimal(usdt_info.get('balance', '0.0'))  # Total balance
-            return total_balance
-        else:
-            print("USDT balance not found in futures account.")
-            return Decimal('0.0')
-        
-    except Exception as e:
-        print(f"Error fetching total wallet balance: {e}")
-        return Decimal('0.0')
+        # Wait before retrying
+        time.sleep(delay)
+
+    print("Failed to fetch USDT balance after maximum retries.")
+    return Decimal('0.0')
+
 
 
 def calculate_dynamic_safe_trade_amount(available_balance, num_symbols, two_sided):
