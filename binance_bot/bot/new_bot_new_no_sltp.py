@@ -456,7 +456,7 @@ def run_symbol_task(symbol):
     safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
     usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount
 
-    print (f"safe amount per trade: {usdt_to_trade}")
+    #print (f"safe amount per trade: {usdt_to_trade}")
     # Fetch trade suggestion
     trade_signal_sugest = combine_bollinger_and_rsi(symbol)
     trade_signal = trade_signal_sugest['trend']
