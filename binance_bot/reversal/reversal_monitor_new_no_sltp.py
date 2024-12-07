@@ -148,14 +148,12 @@ def condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi
         return True
     return False
 
-#RSI weak signal
-def condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
-    if position_side == 'BUY':
-        if rsi_current > rsi_oversold and rsi_current < rsi_previous and rsi_current < 50 and rsi_previous <= 50:
-            return True
-    elif position_side == 'SELL':
-        if rsi_current < rsi_overbought and rsi_current > rsi_previous and rsi_current > 50 and rsi_previous >= 50:
-            return True
+#RSI fail oversold or overbought
+def condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
+    if position_side == 'BUY' and 50 < rsi_current <= 60 and rsi_previous > 60:
+        return True
+    elif position_side == 'SELL' and 50 > rsi_current >= 40 and rsi_previous < 40:
+        return True
     return False
 
 def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
@@ -176,9 +174,9 @@ def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
     elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
             reason = 'RSI fail break out/down'
             exit_signal = True
-    #elif condition_rsi_momentum(rsi_current, rsi_previous, position_side,rsi_overbought, rsi_oversold):
-    #        reason = 'RSI weak momentum'
-    #        exit_signal = True
+    elif condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
+            reason = 'RSI fail over bought/sold'
+            exit_signal = True
 
     return {
         'exit_signal': exit_signal,
@@ -196,8 +194,8 @@ def track_trade(
     max_profit=1,  # Minimum target profit in percentage
     bollinger_window=9,  # Bollinger Bands window
     bollinger_std_dev=2,  # Bollinger Bands standard deviation
-    rsi_oversold_zone=38,  # RSI oversold zone
-    rsi_overbought_zone=62,  # RSI overbought zone
+    rsi_oversold_zone=30,  # RSI oversold zone
+    rsi_overbought_zone=70,  # RSI overbought zone
     rsi_length=9,  # RSI calculation period
     sleep_time=1  # Time to sleep between checks (in seconds)
 ):
