@@ -34,7 +34,7 @@ def start_profit_monitor():
 
 # Function to run the BOT in a separate thread
 def start_bot(): 
-    print(">> Starting Bot Engine...")
+    print(">> Starting Bot Engine v2.0")
     while True:
         try:
             run_trading_bot_task()

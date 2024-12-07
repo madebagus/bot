@@ -451,7 +451,7 @@ coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','XMRUSDT','ETHUSDT','INJUSDT','XRPUS
 cancel_fetch_orders = False
 # Function to handle trading for each symbol
 def run_symbol_task(symbol):
-    print(f"+ + + Running bot for {symbol}")
+    print(f"+ + + Running bot v2.0 for {symbol}")
     num_symbols = len(coin_pairs)
     safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
     usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount
