@@ -23,35 +23,34 @@ if not API_KEY or not API_SECRET:
 # Create a Blueprint for wallet operations
 wallet_bp = Blueprint('wallet', __name__, url_prefix='/api/wallet/')
 
-def get_wallet_balance():
-    """Fetch the current available USDT balance in the futures wallet."""
+from decimal import Decimal
+
+def get_total_wallet_balance():
+    """Fetch the total USDT balance in the futures wallet (available + used margin + unrealized PnL)."""
     try:
         # Fetch futures account balance
         futures_account_info = client.futures_account_balance()
         
-        # Find USDT balance from futures account
-        usdt_balance = next(
-            (asset['balance'] for asset in futures_account_info if asset['asset'] == 'USDT'), None
+        # Find USDT asset and fetch its total balance
+        usdt_info = next(
+            (asset for asset in futures_account_info if asset['asset'] == 'USDT'),
+            None
         )
         
-        if usdt_balance is not None:
-            usdt_balance = Decimal(usdt_balance)
-            return usdt_balance
+        if usdt_info:
+            # Extract and sum relevant fields for total balance
+            total_balance = Decimal(usdt_info.get('balance', '0.0'))  # Total balance
+            return total_balance
         else:
             print("USDT balance not found in futures account.")
             return Decimal('0.0')
         
     except Exception as e:
-        print(f"Error fetching futures wallet balance: {e}")
-        return Decimal('0.0')
-        
-        
-    except Exception as e:
-        print(f"Error fetching wallet balance: {e}")
-        # Default balance for testing or fallback if error occurs
+        print(f"Error fetching total wallet balance: {e}")
         return Decimal('0.0')
 
-def calculate_dynamic_safe_trade_amount(available_balance, num_symbols, two_sided=False):
+
+def calculate_dynamic_safe_trade_amount(available_balance, num_symbols, two_sided):
     """
     Calculate a dynamic safe trade amount for each symbol, considering two-sided orders.
     
@@ -61,10 +60,10 @@ def calculate_dynamic_safe_trade_amount(available_balance, num_symbols, two_side
     :return: Calculated safe trade amount per symbol.
     """
     # Define the maximum safe percentage based on risk tolerance
-    safety_percentage = Decimal('50.0')  # Example: 30% risk tolerance
+    safety_percentage = Decimal('0.9')  # Example: 30% risk tolerance
     
     # Total safe trade amount for all symbols based on the safety percentage
-    total_safe_trade_amount = (available_balance * safety_percentage) / Decimal(100)
+    total_safe_trade_amount = (available_balance * safety_percentage)
     
     # If two-sided orders are considered, the allocation per side will be halved
     if two_sided:
@@ -76,30 +75,19 @@ def calculate_dynamic_safe_trade_amount(available_balance, num_symbols, two_side
     return safe_trade_amount_per_symbol
 
 @wallet_bp.route('/safe_trade_amount', methods=['GET'])
-def safe_trade_amount():
+
+def safe_trade_amount(num_symbols,two_side):
     """
     API endpoint to calculate a safe trade amount based on available balance and leverage.
     """
     try:
-        # Leverage value to be used in the calculation (can be set dynamically if needed)
-        leverage = Decimal('5')
-        num_symbols = 5
         # Get the available balance
-        available_balance = get_wallet_balance()
-        
+        available_balance = get_total_wallet_balance()
         # Calculate safety percentage dynamically
-        safety_percentage = calculate_dynamic_safe_trade_amount(available_balance, num_symbols)
+        safe_trade_amount = calculate_dynamic_safe_trade_amount(available_balance, num_symbols, two_side)
         
-        # Calculate the safe trade amount
-        safe_trade_amount = (available_balance * safety_percentage) / Decimal(100)
-        
-        return jsonify({
-            "available_balance": str(available_balance),  # Convert to string for precise representation
-            "leverage": str(leverage),
-            "dynamic_safety_percentage": str(safety_percentage),
-            "safe_trade_amount": str(safe_trade_amount)
-        })
+        return safe_trade_amount
         
     except Exception as e:
         print(f"Error calculating safe trade amount: {e}")
-        return jsonify({"error": "Could not calculate safe trade amount"}), 500
+        return 0.0

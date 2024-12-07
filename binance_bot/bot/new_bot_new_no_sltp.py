@@ -16,6 +16,7 @@ from decimal import Decimal
 import pandas_ta as pd_ta
 from binance_bot.messaging.chat_bot import send_telegram_message
 from binance_bot.data.database_management import insert_orders
+from binance_bot.routers.wallet import safe_trade_amount
 
 
 # Initialize the blueprint for the bot
@@ -451,8 +452,11 @@ cancel_fetch_orders = False
 # Function to handle trading for each symbol
 def run_symbol_task(symbol):
     print(f"+ + + Running bot for {symbol}")
-    
-    usdt_to_trade = Decimal('10')  # Example trade amount
+    num_symbols = len(coin_pairs)
+    safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
+    usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount
+
+    print (f"safe amount per trade: {usdt_to_trade}")
     # Fetch trade suggestion
     trade_signal_sugest = combine_bollinger_and_rsi(symbol)
     trade_signal = trade_signal_sugest['trend']
