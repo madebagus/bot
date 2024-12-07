@@ -28,7 +28,7 @@ def insert_orders(symbol, trend, entry_price, position_size):
             conn.close()
 
 # Update order data in MySQL table based on fetch_recent_orders
-def update_orders(symbol, trend, closing_price):
+def update_orders(symbol, trend, closing_price, usdt_profit):
     try:
         conn, tunnel = create_conn()
         with conn.cursor() as cursor:
@@ -43,10 +43,10 @@ def update_orders(symbol, trend, closing_price):
                 order_id = order[0]  # Extract the ID from the tuple
                 update_query = """
                     UPDATE orders
-                    SET closing_price = %s, closing_time = now(), status = 'CLOSED'
+                    SET closing_price = %s, estimate_pnl = %s, closing_time = now(), status = 'CLOSED'
                     WHERE id = %s 
                 """
-                cursor.execute(update_query, (closing_price, order_id))
+                cursor.execute(update_query, (closing_price, usdt_profit, order_id))
                 conn.commit()  # Commit the transaction
 
     except Exception as e:
