@@ -442,7 +442,7 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
 import threading
 
 # Initialize the list of coin pairs with a default value
-coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','XMRUSDT','SOLUSDT','INJUSDT','XRPUSDT','BNBUSDT','SUIUSDT','ATOMUSDT']  # Example with 4 pairs
+coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','XMRUSDT','ETHUSDT','INJUSDT','XRPUSDT','BNBUSDT','SUIUSDT','ATOMUSDT']  # Example with 4 pairs
 # Flag to control whether the fetch_recent_orders task should be canceled
 cancel_fetch_orders = False
 # Function to handle trading for each symbol
