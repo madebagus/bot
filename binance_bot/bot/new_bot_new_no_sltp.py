@@ -125,9 +125,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if(rsi < 30) or (rsi >= 30 and prev_rsi < 30): # Only entry after oversold reversal
+        if rsi > 20 and prev_rsi < 20: # Only entry after oversold reversal
             rsi_dec = 'BUY' 
-        elif (rsi > 70) or (rsi <= 70 and prev_rsi > 70): # Only entry after overbough reversal 
+        elif rsi < 80 and prev_rsi > 80: # Only entry after overbough reversal 
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -150,18 +150,16 @@ def check_entry_signal(df, symbol):
         
         volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.2
+        atr_threshold = atr * 0.25
         price_change = abs(price - prev_price)
 
         # Final signal logic
         if price_change >= atr_threshold:
-            if rsi_dec == 'BUY' and macd_dec == 'BUY' and bb_dec=='BUY':
+            if rsi_dec == 'BUY' and bb_dec=='BUY':
                 return 'BUY'
-            elif rsi_dec=='SELL' and macd_dec=='SELL' and bb_dec=='SELL':
+            elif rsi_dec=='SELL' and bb_dec=='SELL':
                 return 'SELL'
             
-            #print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, macd: {macd_dec}, boll: {bb_dec}, spike: {volume_spike}")
-
         return 'HOLD'
 
     except Exception as e:
