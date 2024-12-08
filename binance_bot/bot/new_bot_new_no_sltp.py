@@ -229,8 +229,6 @@ def check_normal_trend_signal(df, symbol):
             elif rsi_dec == 'SELL' and bb_dec == 'SELL':
                 return 'SELL'
             
-            #print(f"[+ SIGNAL +] {symbol} atr_threshold: {atr_threshold:.2f}, price_change: {price_change:.2f}, rsi: {rsi_dec}, boll:{bb_dec}, position_percentage: {position_percentage:.2f}")
-
         return 'HOLD'
 
     except Exception as e:
@@ -287,7 +285,7 @@ def combine_bollinger_and_rsi(
             elif signal == 'SELL':
                 trend = 'SELL'
              
-            print(f"[> > Strong Trend] {symbol} adx: {latest_adx:.2f}, strong_signal: {trend}" )
+            print(f"[> Strong Trend <] {symbol} adx: {latest_adx:.2f}, strong_signal: {trend}" )
 
         # If ADX <= 25, use only RSI and Bollinger Bands
         elif latest_adx < adx_threshold:
@@ -300,7 +298,7 @@ def combine_bollinger_and_rsi(
             elif signal == 'SELL':
                 trend = 'SELL'
             
-            print(f"[+ + Normal Trend] {symbol}, adx: {latest_adx:.2f}, normal_signal:{signal}")
+            print(f"[= Normal Trend =] {symbol}, adx: {latest_adx:.2f}, normal_signal:{signal}")
 
         return {'trend': trend, 'entry_price': latest_close, 'adx':latest_adx}
 
@@ -444,12 +442,12 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
 import threading
 
 # Initialize the list of coin pairs with a default value
-coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','XMRUSDT','ETHUSDT','INJUSDT','XRPUSDT','BNBUSDT','SUIUSDT','ATOMUSDT']  # Example with 4 pairs
+coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','XMRUSDT','SOLUSDT','INJUSDT','XRPUSDT','BNBUSDT','SUIUSDT','ATOMUSDT']  # Example with 4 pairs
 # Flag to control whether the fetch_recent_orders task should be canceled
 cancel_fetch_orders = False
 # Function to handle trading for each symbol
 def run_symbol_task(symbol):
-    print(f"+ + + Running bot v2.0 for {symbol}")
+    print(f"+ + + Running bot v2.1.0 for {symbol}")
     num_symbols = len(coin_pairs)
     safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
     usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount

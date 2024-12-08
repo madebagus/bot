@@ -66,29 +66,33 @@ def get_total_wallet_balance(max_retries=10, delay=2):
 
 
 
+from decimal import Decimal, ROUND_DOWN
+
 def calculate_dynamic_safe_trade_amount(available_balance, num_symbols, two_sided):
     """
     Calculate a dynamic safe trade amount for each symbol, considering two-sided orders.
-    
-    :param available_balance: The available balance in the wallet.
-    :param num_symbols: The number of symbols to trade.
-    :param two_sided: Whether two-sided orders (buy and sell) are being placed for each symbol.
-    :return: Calculated safe trade amount per symbol.
+
+    :param available_balance: The available balance in the wallet (Decimal).
+    :param num_symbols: The number of symbols to trade (int).
+    :param two_sided: Whether two-sided orders (buy and sell) are being placed for each symbol (bool).
+    :return: Calculated safe trade amount per symbol as a Decimal rounded to 2 digits.
     """
     # Define the maximum safe percentage based on risk tolerance
-    safety_percentage = Decimal('0.9')  # Example: 30% risk tolerance
-    
+    safety_percentage = Decimal('0.9')  # Example: 90% risk tolerance
+
     # Total safe trade amount for all symbols based on the safety percentage
-    total_safe_trade_amount = (available_balance * safety_percentage)
-    
-    # If two-sided orders are considered, the allocation per side will be halved
+    total_safe_trade_amount = available_balance * safety_percentage
+
+    # If two-sided orders are considered, halve the allocation
     if two_sided:
         total_safe_trade_amount /= Decimal(2)
-    
+
     # Calculate the safe trade amount per symbol
     safe_trade_amount_per_symbol = total_safe_trade_amount / Decimal(num_symbols)
-    
-    return safe_trade_amount_per_symbol
+
+    # Round to 2 decimal places and return
+    return safe_trade_amount_per_symbol.quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+
 
 @wallet_bp.route('/safe_trade_amount', methods=['GET'])
 
