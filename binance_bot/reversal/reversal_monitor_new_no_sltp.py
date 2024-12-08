@@ -529,55 +529,51 @@ def get_open_positions_with_order_id():
 
 # Main function to monitor all positions
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 def monitor_positions():
     """
-    Monitors open positions dynamically and tracks their profit/loss in real-time.
+    Monitors open positions dynamically and tracks their profit/loss in real-time using threading.
     """
+    def handle_position(order):
+        """
+        Handles monitoring of a single position in a thread.
+        """
+        try:
+            # Extract details for the current order
+            symbol = order['symbol']
+            side = order['side']
+            amount = float(order['positionAmt'])  # Ensure the amount is a float for calculations
+            entry_price = float(order['entryPrice'])  # Ensure entry price is a float
+
+            # Validate position details
+            if entry_price == 0 or amount == 0:
+                print(f"[INCOMPLETE POSITION] Missing details for {symbol}. Skipping...")
+                return
+
+            # Call track_trade for this position
+            result = track_trade(symbol, side, amount, entry_price)
+
+            if result['close_position']:
+                print(f"[CLOSE SIGNAL] {symbol} {side} closed. Reason: {result['reason']}")
+        except Exception as e:
+            print(f"[ERROR] Error handling position for {order['symbol']}: {e}")
+
     while True:
         try:
-            # Fetch open positions
             orders = get_open_positions()
-
-            if not orders:  # If no orders are found
+            if not orders:
                 print("[Monitoring] No open positions available.")
                 time.sleep(10)
                 continue
 
-            for order in orders:
-                # Extract details for the current order
-                symbol = order['symbol']
-                side = order['side']
-                amount = float(order['positionAmt'])  # Ensure the amount is a float for calculations
-                entry_price = float(order['entryPrice'])  # Ensure entry price is a float
-
-                # Debugging: Print order details
-                #print(f"[INFO] Checking order for {symbol}: {side}, Amount: {amount}, Entry Price: {entry_price}")
-
-                # Validate position details
-                if entry_price == 0 or amount == 0:
-                    print(f"[INCOMPLETE POSITION] Missing details for {symbol}. Skipping...")
-                    continue
-
-                # Debugging: Ensure we're calling the track_trade function
-                #print(f"[INFO] Calling track_trade for {symbol} with {side}, {amount}, {entry_price}")
-                result = track_trade(symbol, side, amount, entry_price)
-
-                if result['close_position']:
-                    print(f"[CLOSE SIGNAL] {symbol} {side} closed. Reason: {result['reason']}")
-                #else:
-                #    print(f"[Monitoring] {symbol} {side} - No exit condition met.")
+            with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers as needed
+                executor.map(handle_position, orders)
 
         except Exception as e:
             print(f"[ERROR] Error in monitoring positions: {e}")
         finally:
-            # Adjust based on API rate limits
             time.sleep(3)
-
-
-
-
-
 
 
 
