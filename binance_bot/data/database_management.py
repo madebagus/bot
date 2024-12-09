@@ -57,7 +57,3 @@ def update_orders(symbol, trend, closing_price, usdt_profit):
             conn.close()
 
 
-
-
-
-
