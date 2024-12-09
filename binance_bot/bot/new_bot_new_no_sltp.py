@@ -363,49 +363,68 @@ def get_symbol_precision(symbol):
     """Fetch the quantity and price precision for a given symbol."""
     exchange_info = client.futures_exchange_info()
     symbol_info = next((item for item in exchange_info['symbols'] if item['symbol'] == symbol), None)
-    if symbol_info:
-        # Quantity precision is the number of decimals allowed for quantity (stepSize)
-        quantity_precision = len(symbol_info['filters'][1]['stepSize'].split('.')[1])
-        # Price precision is the number of decimals allowed for price (tickSize)
-        price_precision = len(symbol_info['filters'][0]['tickSize'].split('.')[1])
-        return price_precision, quantity_precision
-    else:
+    if not symbol_info:
         raise ValueError(f"Symbol {symbol} not found in exchange information.")
+    
+    # Find filters by type
+    lot_size_filter = next(f for f in symbol_info['filters'] if f['filterType'] == 'LOT_SIZE')
+    price_filter = next(f for f in symbol_info['filters'] if f['filterType'] == 'PRICE_FILTER')
 
-def format_decimal(value, precision):
-    # Format the value to match the specified precision
-    return Decimal(str(value)).quantize(Decimal(f'1e-{precision}'), rounding=ROUND_DOWN)
+    quantity_precision = len(lot_size_filter['stepSize'].split('.')[1])
+    price_precision = len(price_filter['tickSize'].split('.')[1])
+
+    return price_precision, quantity_precision
+
+
+def format_decimal(value, precision, rounding_mode=ROUND_DOWN):
+    """Format the value to match the specified precision."""
+    return Decimal(str(value)).quantize(Decimal(f'1e-{precision}'), rounding=rounding_mode)
+
 
 def check_existing_orders(symbol, trend):
     """Check if there are existing orders for the given symbol and trend."""
+    position_side = 'LONG' if trend == 'BUY' else 'SHORT'
     orders = client.futures_get_open_orders(symbol=symbol)
     for order in orders:
-        if order['positionSide'] == trend:
+        if order['positionSide'] == position_side:
             return True
     return False
 
-# placing future order at the mark price 
 
+# placing future order at the mark price 
 def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_trade, trend_condition):
     """
     Place a market order to open a position without setting stop loss or take profit.
     """
     try:
-        # Ensure time is synced
-        #sync_binance_time(client)
         # Ensure proper data types for the parameters
         leverage = Decimal(leverage) if not isinstance(leverage, Decimal) else leverage
         quantity = Decimal(quantity) if not isinstance(quantity, Decimal) else quantity
 
         # Check for existing open positions for the symbol
-        open_positions = client.futures_position_information(recvWindow=10000, symbol=symbol)
+        try:
+            open_positions = client.futures_position_information(recvWindow=10000, symbol=symbol)
+        except Exception as api_error:
+            print(f"API error while fetching positions for {symbol}: {api_error}")
+            return
+
+        if not open_positions:
+            print(f"No position information available for {symbol}.")
+            open_positions = []
+
         for position in open_positions:
-            if position['positionSide'] == ('LONG' if trend == 'BUY' else 'SHORT') and float(position['positionAmt']) != 0:
-                print(f"Existing position detected for {symbol} in {trend} direction. Skipping new order.")
-                return  # Exit if there's already an open position in the same direction
+            if 'positionSide' in position and 'positionAmt' in position:
+                if position['positionSide'] == ('LONG' if trend == 'BUY' else 'SHORT') and float(position['positionAmt']) != 0:
+                    print(f"Existing position detected for {symbol} in {trend} direction. Skipping new order.")
+                    return
+            else:
+                print(f"Unexpected position data format: {position}")
 
         # Get symbol quantity precision
-        _, qty_precision = get_symbol_precision(symbol)
+        symbol_precision = get_symbol_precision(symbol)
+        if not symbol_precision or len(symbol_precision) != 2:
+            raise ValueError(f"Invalid precision data for symbol: {symbol}")
+        _, qty_precision = symbol_precision
 
         # Round quantity to the symbol's precision
         quantity = format_decimal(quantity, qty_precision)
@@ -429,12 +448,10 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
         # send telegram message
         send_telegram_message(message)
         # insert to database for analysis
-        insert_orders(symbol,trend,entry_price,quantity)
+        insert_orders(symbol, trend, entry_price, quantity)
 
     except Exception as e:
         print(f"Error placing order for {symbol} : {e}")
-
-
 
 # ++ MAIN SECTION ++
 
@@ -442,12 +459,13 @@ def place_futures_order(symbol, trend, leverage, quantity, entry_price, usdt_to_
 import threading
 
 # Initialize the list of coin pairs with a default value
-coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','XMRUSDT','ETHUSDT','INJUSDT','XRPUSDT','BNBUSDT','SUIUSDT','ATOMUSDT']  # Example with 4 pairs
+coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','LINKUSDT','XMRUSDT','INJUSDT','XRPUSDT','BNBUSDT','SUIUSDT','ATOMUSDT']  # Example with 4 pairs
 # Flag to control whether the fetch_recent_orders task should be canceled
 cancel_fetch_orders = False
 # Function to handle trading for each symbol
 def run_symbol_task(symbol):
     print(f"+ + + Running bot for {symbol}")
+
     num_symbols = len(coin_pairs)
     safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
     usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount

@@ -14,7 +14,6 @@ BOT_TOKEN = "YOUR_BOT_TOKEN"
 CHAT_ID = "YOUR_CHAT_ID"
 
 
-
 # Function to periodically send the status message
 def start_status_scheduler():
     print("Starting Status Scheduler...")
@@ -34,7 +33,7 @@ def start_profit_monitor():
 
 # Function to run the BOT in a separate thread
 def start_bot(): 
-    print(">> Starting Bot Engine v2.0")
+    print(">> Starting Bot Engine...")
     while True:
         try:
             run_trading_bot_task()
@@ -50,13 +49,14 @@ if __name__ == '__main__':
     monitor_thread.daemon = True  # Daemon thread will exit when the main program exits
     monitor_thread.start()
 
-    bot_thread = Thread(target=start_bot)
-    bot_thread.daemon = True  # Daemon thread will exit when the main program exits
-    bot_thread.start()
-
     status_thread = Thread(target=start_status_scheduler)
     status_thread.daemon = True  # Daemon thread will exit when the main program exits
     status_thread.start()
+
+    
+    bot_thread = Thread(target=start_bot)
+    bot_thread.daemon = True  # Daemon thread will exit when the main program exits
+    bot_thread.start()
 
     # Run the Flask app (it will not block background threads)
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)  # `use_reloader=False` to prevent running the background tasks multiple times
