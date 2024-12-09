@@ -150,7 +150,7 @@ def check_entry_signal(df, symbol):
         
         volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.25
+        atr_threshold = atr * 0.15
         price_change = abs(price - prev_price)
 
         # Final signal logic
