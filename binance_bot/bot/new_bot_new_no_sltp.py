@@ -125,9 +125,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi <= 20) or (40 > rsi > 30 and prev_rsi < 30): # Only entry after oversold reversal
+        if (rsi <= 20) or (35 >= rsi > 25 and prev_rsi < 25): # Only entry after oversold reversal
             rsi_dec = 'BUY' 
-        elif (rsi >= 80) or (60 > rsi < 70 and prev_rsi > 70): # Only entry after overbough reversal 
+        elif (rsi >= 80) or (65 <= rsi < 75 and prev_rsi > 75): # Only entry after overbough reversal 
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -192,9 +192,9 @@ def check_normal_trend_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators RSI 
-        if (rsi <= 30) or (40 > rsi > 30 and prev_rsi < 30):
+        if (rsi <= 30) or (40 >= rsi > 30 and prev_rsi < 30):
             rsi_dec = 'BUY'
-        elif(rsi >= 70) or (60 > rsi < 70 and prev_rsi > 70):
+        elif(rsi >= 70) or (60 <= rsi < 70 and prev_rsi > 70):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD'
@@ -447,7 +447,7 @@ coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','XMRUSDT','ETHUSDT','INJUSDT','XRPUS
 cancel_fetch_orders = False
 # Function to handle trading for each symbol
 def run_symbol_task(symbol):
-    print(f"+ + + Running bot v2.1.0 for {symbol}")
+    print(f"+ + + Running bot for {symbol}")
     num_symbols = len(coin_pairs)
     safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
     usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount
