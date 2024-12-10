@@ -125,9 +125,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi <= 15) or (rsi > 25 and prev_rsi < 25): # Only entry after oversold reversal
+        if (rsi <= 20) or (rsi > 25 and prev_rsi <= 25): # Only entry after oversold reversal
             rsi_dec = 'BUY' 
-        elif (rsi >= 85) or (rsi < 75 and prev_rsi > 75): # Only entry after overbough reversal 
+        elif (rsi >= 80) or (rsi < 75 and prev_rsi >= 75): # Only entry after overbough reversal 
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -150,7 +150,7 @@ def check_entry_signal(df, symbol):
         
         volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.20
+        atr_threshold = atr * 0.15
         price_change = abs(price - prev_price)
 
         # Final signal logic
@@ -192,9 +192,9 @@ def check_normal_trend_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators RSI 
-        if (rsi <= 25) or (rsi > 30 and prev_rsi <= 30):
+        if (rsi <= 30) or (rsi > 30 and prev_rsi <= 30):
             rsi_dec = 'BUY'
-        elif(rsi >= 75) or (rsi < 70 and prev_rsi >= 70):
+        elif(rsi >= 70) or (rsi < 70 and prev_rsi >= 70):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD'
@@ -460,6 +460,7 @@ import threading
 
 # Initialize the list of coin pairs with a default value
 coin_pairs = ['BCHUSDT','DOTUSDT','LTCUSDT','LINKUSDT','XMRUSDT','INJUSDT','XRPUSDT','BNBUSDT','SUIUSDT','ATOMUSDT']  # Example with 4 pairs
+
 # Flag to control whether the fetch_recent_orders task should be canceled
 cancel_fetch_orders = False
 # Function to handle trading for each symbol
@@ -468,9 +469,15 @@ def run_symbol_task(symbol):
 
     num_symbols = len(coin_pairs)
     safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
-    usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount
+    usdt_to_trade_x = Decimal(safe_trade_usdt)  # Example trade amount
 
-    #print (f"safe amount per trade: {usdt_to_trade}")
+    if usdt_to_trade_x <= 15:
+        usdt_to_trade_x = usdt_to_trade_x
+    else:
+        usdt_to_trade_x = Decimal('15')
+
+    usdt_to_trade = Decimal('2')    #print (f"safe amount per trade: {usdt_to_trade}")
+
     # Fetch trade suggestion
     trade_signal_sugest = combine_bollinger_and_rsi(symbol)
     trade_signal = trade_signal_sugest['trend']
