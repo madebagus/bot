@@ -125,9 +125,9 @@ def check_entry_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators logic
-        if (rsi <= 25) or (rsi > 25 and prev_rsi < 25): # Only entry after oversold reversal
+        if (rsi <= 15) or (rsi > 25 and prev_rsi < 25): # Only entry after oversold reversal
             rsi_dec = 'BUY' 
-        elif (rsi >= 75) or (rsi < 75 and prev_rsi > 75): # Only entry after overbough reversal 
+        elif (rsi >= 85) or (rsi < 75 and prev_rsi > 75): # Only entry after overbough reversal 
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD' 
@@ -150,7 +150,7 @@ def check_entry_signal(df, symbol):
         
         volume_spike = df['volume'].iloc[-1] > df['volume'].rolling(20).mean().iloc[-1] * 1.5
 
-        atr_threshold = atr * 0.15
+        atr_threshold = atr * 0.20
         price_change = abs(price - prev_price)
 
         # Final signal logic
@@ -192,9 +192,9 @@ def check_normal_trend_signal(df, symbol):
         prev_price = df['close'].iloc[-2]
 
         # Indicators RSI 
-        if (rsi <= 30) or (rsi > 30 and prev_rsi < 30):
+        if (rsi <= 25) or (rsi > 30 and prev_rsi <= 30):
             rsi_dec = 'BUY'
-        elif(rsi >= 70) or (rsi < 70 and prev_rsi > 70):
+        elif(rsi >= 75) or (rsi < 70 and prev_rsi >= 70):
             rsi_dec = 'SELL'
         else:
             rsi_dec = 'HOLD'
