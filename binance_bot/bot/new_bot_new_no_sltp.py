@@ -469,14 +469,12 @@ def run_symbol_task(symbol):
 
     num_symbols = len(coin_pairs)
     safe_trade_usdt = safe_trade_amount(num_symbols,two_side=True)
-    usdt_to_trade_x = Decimal(safe_trade_usdt)  # Example trade amount
+    usdt_to_trade = Decimal(safe_trade_usdt)  # Example trade amount
 
-    if usdt_to_trade_x <= 15:
-        usdt_to_trade_x = usdt_to_trade_x
+    if usdt_to_trade <= 15:
+        usdt_to_trade = usdt_to_trade
     else:
-        usdt_to_trade_x = Decimal('15')
-
-    usdt_to_trade = Decimal('2')    #print (f"safe amount per trade: {usdt_to_trade}")
+        usdt_to_trade = Decimal('15')
 
     # Fetch trade suggestion
     trade_signal_sugest = combine_bollinger_and_rsi(symbol)
