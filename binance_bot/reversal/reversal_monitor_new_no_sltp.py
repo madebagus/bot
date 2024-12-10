@@ -129,6 +129,24 @@ def averaging_order(symbol, side, amount):
     except Exception as e:
         print(f"Error placing averaging order for {symbol}: {e}")
 
+# Calculate ADX
+def adx_indicator(df):
+    """Calculate ADX and return its value, removing NaN values."""
+    # Ensure that the dataframe contains the necessary columns
+    if 'high' not in df or 'low' not in df or 'close' not in df:
+        raise ValueError("Dataframe must contain 'high', 'low', and 'close' columns.")
+    
+    # Calculate ADX using pandas_ta with a default length of 14
+    adx_df = pd_ta.adx(df['high'], df['low'], df['close'], length=9)  # ADX returns a DataFrame
+    
+    # Select only the ADX column from the resulting DataFrame
+    df['ADX'] = adx_df['ADX_9']
+
+    # Drop any NaN values that may be present
+    df = df.dropna(subset=['ADX'])
+
+    # Return the last valid ADX value
+    return df['ADX'].iloc[-1] 
 
 # RSI Exit condition functions
 
@@ -146,6 +164,7 @@ def condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi
         return True
     elif position_side == 'SELL' and rsi_current < rsi_overbought and rsi_current >= 50 and rsi_previous < 50:
         return True
+    
     return False
 
 #RSI fail oversold or overbought
@@ -154,7 +173,19 @@ def condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
         return True
     elif position_side == 'SELL' and 50 > rsi_current >= 40 and rsi_previous < 40:
         return True
+    
     return False
+
+#RSI fail oversold or overbought
+def condition_rsi_weak_momentum(rsi_current, rsi_previous, position_side):
+    if position_side == 'BUY' and 50 > rsi_current >= 40 and 45 < rsi_previous <= 50 and rsi_current < rsi_previous:
+        return True
+    elif position_side == 'SELL' and 50 < rsi_current <= 60 and 55 > rsi_previous >= 50 and rsi_current > rsi_previous:
+        return True
+    
+    return False
+
+# Sumarry RSi exit condition 
 
 def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
     # Fetch data for the specified symbol and interval
@@ -167,21 +198,44 @@ def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
     exit_signal = False
     reason = None  # Default reason when no exit signal is triggered
     
-    # Check the exit conditions
-    if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
-            reason = 'RSI in over bought/sold'
-            exit_signal = True
-    elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
-            reason = 'RSI fail break out/down'
-            exit_signal = True
-    elif condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
-            reason = 'RSI fail over bought/sold'
-            exit_signal = True
+    adx = adx_indicator(df)
 
-    return {
-        'exit_signal': exit_signal,
-        'reason': reason if reason is not None else 'No exit signal detected'
-    }
+    if adx >= 25:
+        # Check the exit conditions
+        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+                reason = 'RSI in over bought/sold'
+                exit_signal = True
+        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+                reason = 'RSI fail break out/down'
+                exit_signal = True
+        elif condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
+                reason = 'RSI fail over bought/sold'
+                exit_signal = True
+        elif condition_rsi_weak_momentum(rsi_current, rsi_previous, position_side):
+                reason = 'RSI weak momentum'
+                exit_signal = True
+
+        return {
+            'exit_signal': exit_signal,
+            'reason': reason if reason is not None else 'No exit signal detected'
+        }
+    else:
+
+        # Check the exit conditions
+        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+                reason = 'RSI in over bought/sold'
+                exit_signal = True
+        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+                reason = 'RSI fail break out/down'
+                exit_signal = True
+        elif condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
+                reason = 'RSI fail over bought/sold'
+                exit_signal = True
+
+        return {
+            'exit_signal': exit_signal,
+            'reason': reason if reason is not None else 'No exit signal detected'
+        }
 
 # track the market movement and decide the perfect timing for exit.
 
@@ -339,25 +393,6 @@ def track_trade(
 
     return {"close_position": False, "reason": "No exit conditions met"}
 
-
-# Calculate ADX
-def adx_indicator(df):
-    """Calculate ADX and return its value, removing NaN values."""
-    # Ensure that the dataframe contains the necessary columns
-    if 'high' not in df or 'low' not in df or 'close' not in df:
-        raise ValueError("Dataframe must contain 'high', 'low', and 'close' columns.")
-    
-    # Calculate ADX using pandas_ta with a default length of 14
-    adx_df = pd_ta.adx(df['high'], df['low'], df['close'], length=9)  # ADX returns a DataFrame
-    
-    # Select only the ADX column from the resulting DataFrame
-    df['ADX'] = adx_df['ADX_9']
-
-    # Drop any NaN values that may be present
-    df = df.dropna(subset=['ADX'])
-
-    # Return the last valid ADX value
-    return df['ADX'].iloc[-1] 
 
 # get the price riversal
 
