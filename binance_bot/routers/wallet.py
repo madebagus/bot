@@ -40,7 +40,7 @@ def get_total_wallet_balance(max_retries=10, delay=2):
     for attempt in range(max_retries):
         try:
             # Fetch futures account balance
-            futures_account_info = client.futures_account_balance()
+            futures_account_info = client.futures_account_balance(recvWindow=10000)
             
             # Find USDT asset and fetch its total balance
             usdt_info = next(

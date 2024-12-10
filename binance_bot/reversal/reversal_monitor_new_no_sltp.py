@@ -1,4 +1,5 @@
 from math import e
+from tarfile import data_filter
 import time
 import os
 from matplotlib.units import DecimalConverter
@@ -164,7 +165,6 @@ def condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi
         return True
     elif position_side == 'SELL' and rsi_current < rsi_overbought and rsi_current >= 50 and rsi_previous < 50:
         return True
-    
     return False
 
 #RSI fail oversold or overbought
@@ -173,20 +173,17 @@ def condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
         return True
     elif position_side == 'SELL' and 50 > rsi_current >= 40 and rsi_previous < 40:
         return True
-    
     return False
 
 #RSI fail oversold or overbought
-def condition_rsi_weak_momentum(rsi_current, rsi_previous, position_side):
+def condition_rsi_weak_signal(rsi_current, rsi_previous, position_side):
     if position_side == 'BUY' and 50 > rsi_current >= 40 and 45 < rsi_previous <= 50 and rsi_current < rsi_previous:
         return True
     elif position_side == 'SELL' and 50 < rsi_current <= 60 and 55 > rsi_previous >= 50 and rsi_current > rsi_previous:
         return True
-    
     return False
 
-# Sumarry RSi exit condition 
-
+# Summarize RSI condition 
 def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
     # Fetch data for the specified symbol and interval
     df = get_data(symbol, '1m')
@@ -198,44 +195,24 @@ def check_exit_conditions(symbol, rsi_overbought, rsi_oversold, position_side):
     exit_signal = False
     reason = None  # Default reason when no exit signal is triggered
     
-    adx = adx_indicator(df)
+    # Check the exit conditions
+    if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
+            reason = 'RSI in overbought' if position_side == 'BUY' else 'RSI in oversold'
+            exit_signal = True
+    elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
+            reason = 'RSI fail breakout' if position_side == 'BUY' else 'RSI fail breakdown'
+            exit_signal = True
+    elif condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
+            reason = 'RSI fail overbought' if position_side == 'BUY' else 'RSI fail oversold' 
+            exit_signal = True
+    elif condition_rsi_weak_signal(rsi_current, rsi_previous, position_side):
+            reason = 'RSI weak momentum'
+            exit_signal = True
 
-    if adx >= 25:
-        # Check the exit conditions
-        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
-                reason = 'RSI in over bought/sold'
-                exit_signal = True
-        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
-                reason = 'RSI fail break out/down'
-                exit_signal = True
-        elif condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
-                reason = 'RSI fail over bought/sold'
-                exit_signal = True
-        elif condition_rsi_weak_momentum(rsi_current, rsi_previous, position_side):
-                reason = 'RSI weak momentum'
-                exit_signal = True
-
-        return {
-            'exit_signal': exit_signal,
-            'reason': reason if reason is not None else 'No exit signal detected'
-        }
-    else:
-
-        # Check the exit conditions
-        if condition_rsi_overbought_oversold(rsi_current, rsi_overbought, rsi_oversold, position_side):
-                reason = 'RSI in over bought/sold'
-                exit_signal = True
-        elif condition_rsi_breakout_sudden(rsi_current, rsi_previous, rsi_overbought, rsi_oversold, position_side):
-                reason = 'RSI fail break out/down'
-                exit_signal = True
-        elif condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
-                reason = 'RSI fail over bought/sold'
-                exit_signal = True
-
-        return {
-            'exit_signal': exit_signal,
-            'reason': reason if reason is not None else 'No exit signal detected'
-        }
+    return {
+        'exit_signal': exit_signal,
+        'reason': reason if reason is not None else 'No exit signal detected'
+    }
 
 # track the market movement and decide the perfect timing for exit.
 
@@ -508,7 +485,7 @@ def get_current_price(symbol):
         sync_binance_time(client)
 
         # Fetch the current mark price
-        ticker_data = client.futures_symbol_ticker(recvWindow=10000, symbol=symbol)
+        ticker_data = client.futures_symbol_ticker(recvWindow=100000, symbol=symbol)
         return float(ticker_data['price'])
     except Exception as e:
         print(f"Error fetching current price for {symbol}: {e}")
@@ -526,10 +503,10 @@ def get_open_positions_with_order_id():
         sync_binance_time(client)
 
         # Fetch all positions
-        positions = client.futures_account(recvWindow=10000)['positions']
+        positions = client.futures_account(recvWindow=100000)['positions']
 
         # Fetch all open orders
-        open_orders = client.futures_get_open_orders(recvWindow=10000)
+        open_orders = client.futures_get_open_orders(recvWindow=100000)
 
     except Exception as e:
         print(f"Error fetching data: {e}")
