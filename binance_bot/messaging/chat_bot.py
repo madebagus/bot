@@ -28,7 +28,7 @@ def send_status_message():
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": CHAT_ID,
-        "text": "...I Am Alive [v2.2.1]..."
+        "text": "...I Am Alive [v2.2.2]..."
     }
     try:
         response = requests.post(url, json=payload)
