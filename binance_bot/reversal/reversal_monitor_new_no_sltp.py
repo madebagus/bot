@@ -28,10 +28,25 @@ client = Client(API_KEY, API_SECRET, {"verify": certifi.where()})
 conn, tannel = create_conn()
 
 def sync_binance_time(client):
-    server_time = client.get_server_time()
-    local_time = int(time.time() * 1000)
-    client.time_offset = server_time['serverTime'] - local_time
-    #print(f"Time offset set to {client.time_offset} ms")
+    """
+    Synchronize the client's time offset with Binance server time.
+    Args:
+        client: Binance API client instance.
+    """
+    import time
+    import requests
+
+    # Fetch Binance server time
+    response = requests.get("https://api.binance.com/api/v3/time")
+    if response.status_code == 200:
+        server_time = response.json()['serverTime']
+        local_time = int(time.time() * 1000)
+        client.time_offset = server_time - local_time
+        # Log the time offset (optional)
+        #print(f"Time offset set to {client.time_offset} ms")
+    else:
+        raise Exception(f"Failed to fetch Binance server time: {response.status_code} {response.text}")
+
 
 # Function to fetch historical data and calculate indicators
 
@@ -442,23 +457,36 @@ def get_atr(symbol, period=9):
     return atr
 
 # Function to fetch all open positions
-def get_open_positions():
+def get_open_positions(client):
+    """
+    Fetch all open positions from the Binance futures account.
+
+    Args:
+        client: Binance client instance.
+
+    Returns:
+        List of dictionaries containing details of open positions.
+    """
     try:
         # Synchronize Binance time before making the API call
         sync_binance_time(client)
 
+        # Calculate adjusted timestamp
+        import time
+        timestamp = int(time.time() * 1000) + client.time_offset
+
         # Fetch all positions from the futures account
-        positions = client.futures_account(recvWindow=10000)['positions']
+        positions = client.futures_account(recvWindow=10000, timestamp=timestamp)['positions']
     except Exception as e:
         print(f"Error fetching positions: {e}")
         return []
-    
+
     open_positions = []
     for pos in positions:
         try:
             position_amt = float(pos['positionAmt'])  # Position amount
             entry_price = float(pos['entryPrice'])  # Entry price
-            
+
             if position_amt != 0:  # Check if position is open
                 side = 'BUY' if position_amt > 0 else 'SELL'  # Determine side
                 open_positions.append({
@@ -467,11 +495,11 @@ def get_open_positions():
                     'entryPrice': entry_price,  # Include entry price
                     'side': side
                 })
-                #print(f"[DEBUG] Found open position: {pos['symbol']} | Amount: {position_amt} | Entry Price: {entry_price} | Side: {side}")
         except (ValueError, KeyError, TypeError) as e:
             print(f"Error processing position: {e}, Data: {pos}")
     
     return open_positions
+
 
 # get realtime price
 def get_current_price(symbol):
@@ -573,7 +601,7 @@ def monitor_positions():
 
     while True:
         try:
-            orders = get_open_positions()
+            orders = get_open_positions(client)
             if not orders:
                 print("[Monitoring] No open positions available.")
                 time.sleep(10)
