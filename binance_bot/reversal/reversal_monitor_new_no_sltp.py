@@ -485,7 +485,7 @@ def get_current_price(symbol):
         sync_binance_time(client)
 
         # Fetch the current mark price
-        ticker_data = client.futures_symbol_ticker(recvWindow=100000, symbol=symbol)
+        ticker_data = client.futures_symbol_ticker(recvWindow=10000, symbol=symbol)
         return float(ticker_data['price'])
     except Exception as e:
         print(f"Error fetching current price for {symbol}: {e}")
@@ -503,10 +503,10 @@ def get_open_positions_with_order_id():
         sync_binance_time(client)
 
         # Fetch all positions
-        positions = client.futures_account(recvWindow=100000)['positions']
+        positions = client.futures_account(recvWindow=10000)['positions']
 
         # Fetch all open orders
-        open_orders = client.futures_get_open_orders(recvWindow=100000)
+        open_orders = client.futures_get_open_orders(recvWindow=10000)
 
     except Exception as e:
         print(f"Error fetching data: {e}")
