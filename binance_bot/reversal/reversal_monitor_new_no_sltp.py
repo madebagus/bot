@@ -192,9 +192,9 @@ def condition_rsi_fail_over(rsi_current, rsi_previous, position_side):
 
 #RSI fail oversold or overbought
 def condition_rsi_weak_signal(rsi_current, rsi_previous, position_side):
-    if position_side == 'BUY' and 50 > rsi_current >= 40 and 45 < rsi_previous <= 50 and rsi_current < rsi_previous:
+    if position_side == 'BUY' and 50 > rsi_current >= 35 and 45 < rsi_previous <= 50 and rsi_current < rsi_previous:
         return True
-    elif position_side == 'SELL' and 50 < rsi_current <= 60 and 55 > rsi_previous >= 50 and rsi_current > rsi_previous:
+    elif position_side == 'SELL' and 50 < rsi_current <= 65 and 55 > rsi_previous >= 50 and rsi_current > rsi_previous:
         return True
     return False
 
